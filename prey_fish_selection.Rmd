@@ -81,7 +81,8 @@ ggplot(data=baby_comshin_freq, aes(x=FLEN, y=freq))+
   theme_bw()
 
 ```
-Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need common shiners with the following fork lengths: 1 - 70mm, 3 - 80mm, 5 - 90mm, and 1 - 100mm.
+
+#Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need common shiners with the following fork lengths: 1 - 70mm, 3 - 80mm, 5 - 90mm, and 1 - 100mm.
 
 ```{r Baby Lk. pumpkinseed prey fish size distributions}
 ##Size histogram
@@ -105,7 +106,7 @@ ggplot(data=baby_pseed_freq, aes(x=FLEN, y=freq))+
 
 ```
 
-Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need pumpkinseeds with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 2 - 100mm, and 1 - 110mm.
+#Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need pumpkinseeds with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 2 - 100mm, and 1 - 110mm.
 
 ```{r Baby Lk. yellow perch prey fish size distributions}
 ##Size histogram
@@ -129,7 +130,7 @@ ggplot(data=baby_perch_freq, aes(x=FLEN, y=freq))+
 
 ```
 
-Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need yellow perch with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 1 - 100mm, 1 - 110mm, and 1 - 120mm.
+#Based on the Baby Lake catch data to proportionately select samples for isotope analysis we need yellow perch with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 1 - 100mm, 1 - 110mm, and 1 - 120mm.
 
 ```{r subset data for Daisy Lk. prey fish}
 
@@ -184,7 +185,7 @@ ggplot(data=daisy_bbull_freq, aes(x=FLEN, y=freq))+
 
 ```
 
-Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need brown bullheads with the following fork lengths: 1 - 90mm, 1 - 130mm, 1 - 150mm, 2 - 170mm, 3 - 180mm, and 2 - 190mm.
+#Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need brown bullheads with the following fork lengths: 1 - 90mm, 1 - 130mm, 1 - 150mm, 2 - 170mm, 3 - 180mm, and 2 - 190mm.
 
 ```{r Daisy Lk. smallmouth bass prey fish size distributions}
 ##Size histogram
@@ -208,7 +209,7 @@ ggplot(data=daisy_smb_freq, aes(x=FLEN, y=freq))+
 
 ```
 
-Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need smallmouth bass with the following fork lengths: 1 - 110mm, 1 - 120mm, 2 - 130mm, 2 - 140mm, 2 - 150mm, 1 - 160mm, 1 - 190mm.
+#Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need smallmouth bass with the following fork lengths: 1 - 110mm, 1 - 120mm, 2 - 130mm, 2 - 140mm, 2 - 150mm, 1 - 160mm, 1 - 190mm.
 
 ```{r Daisy Lk. yellow perch prey fish size distributions}
 ##Size histogram
@@ -232,4 +233,4 @@ ggplot(data=daisy_perch_freq, aes(x=FLEN, y=freq))+
 
 ```
 
-Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need yellow perch with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 1 - 100mm, 1 - 110mm, and 1 - 120mm.
+#Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need yellow perch with the following fork lengths: 1 - 70mm, 3 - 80mm, 3 - 90mm, 1 - 100mm, 1 - 110mm, and 1 - 120mm.
