@@ -1,0 +1,61 @@
+---
+title: "Prey Fish Size Selection"
+author: "J Dawson"
+date: '2020-06-17'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import data}
+library(tidyverse)
+library(readr)
+
+data <- read_csv("data/studylakes_catchdata.csv")
+data <- data[c(-20,-21,-22)]
+
+```
+
+##Want to find the distribution of size for each prey fish species for each lake to determine isotope sample gradient, so we only keep fish with FLEN <=200mm.
+
+```{r subset data for prey fish only}
+
+preyfish <- subset(data, data$FLEN<201)
+
+```
+
+```{r subset data for Baby Lk. prey fish}
+
+babyprey <- subset(preyfish, preyfish$FK_Survey_ID == "11")
+
+##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
+baby_comshin <- subset(babyprey, babyprey$`Species code` == "198")
+baby_pseed <- subset(babyprey, babyprey$`Species code` == "313")
+baby_perch <- subset(babyprey, babyprey$`Species code` == "331")
+
+```
+
+```{r Baby Lk. prey fish size distributions}
+
+
+
+```
+
+```{r subset data for Daisy Lk. prey fish}
+
+daisyprey <- subset(preyfish, preyfish$FK_Survey_ID == "14")
+
+##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
+daisy_bbull <- subset(daisyprey, daisyprey$`Species code` == "233")
+daisy_smb <- subset(daisyprey, daisyprey$`Species code` == "316")
+daisy_perch <- subset(daisyprey, daisyprey$`Species code` == "331")
+
+```
+
+```{r Daisy Lk. prey fish size distributions}
+
+
+
+```
