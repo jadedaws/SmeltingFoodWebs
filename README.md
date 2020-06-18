@@ -10,6 +10,8 @@ For additional information, please read our <b> Project overview </b> below.
 
 ### Context
 
+
+
 ### Data
 
 Microbial community survey data was collected using fine-mesh leaf packs suspended at delta mouths for each study lake in Fall 2019. Biomass will also be calculated from these samples. In lieu of stable isotope analyses, the community data will be used to determine the functional roles of microbes present at each site.
@@ -29,6 +31,6 @@ In no particular order:
 - Jade Dawson - `@jadedaws`
 - Brie Edwards -
 - Kevin McCann -
-- Matthew Guzzo -
-- Erik Emilson -
+- Matthew Guzzo - `@mattguzzo12`
+- Erik Emilson -  `@ErikEmilson`
 - John Gunn
