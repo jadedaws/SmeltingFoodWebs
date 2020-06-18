@@ -12,11 +12,11 @@ For additional information, please read our <b> Project overview </b> below.
 
 ### Data
 
-Microbial community survey data from fine-mesh leaf packs suspended at delta mouths for each study lake. Biomass will also be calculated from these samples. In lieu of stable isotope analyses, the community data will be used to determine the functional roles of microbes present at each site.
+Microbial community survey data was collected using fine-mesh leaf packs suspended at delta mouths for each study lake in Fall 2019. Biomass will also be calculated from these samples. In lieu of stable isotope analyses, the community data will be used to determine the functional roles of microbes present at each site.
 
-Periphyton biomass data from suspended periphyton colonization discs at each delta mouth and from representative sites along the shoreline of each basin or by the cardinal directions for smaller lakes. Biomass samples were also used for stable isotope analyses.
+Periphyton biomass data was collected using suspended periphyton colonization discs at each delta mouth and from representative sites along the shoreline of each basin or by the cardinal directions for smaller lakes in Fall 2019. Biomass samples were also used for stable isotope analyses.
 
-Benthic invertebrate community survey data from coarse-mesh leaf packs suspended at delta mouths for each study lake. Preserved coarse-mesh leaf pack inverts will be used to back-calculate benthic invert biomass for each lake. Stable isotope samples of mayflies were taken from representative sites along the shoreline of each basin or by the cardinal directions for smaller lakes.
+Benthic invertebrate community survey data was collected using coarse-mesh leaf packs suspended at delta mouths for each study lake. Preserved coarse-mesh leaf pack inverts will be used to back-calculate benthic invert biomass for each lake. Stable isotope samples of mayflies were taken from representative sites along the shoreline of each basin or by the cardinal directions for smaller lakes.
 
 Zooplankton community survey data from zooplankton hauls taken at the deepest zone of each lake during July 2018. Stable isotope samples of zooplankton were taken from the deepest zone within each basin of the lake.
 
