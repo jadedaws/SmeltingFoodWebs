@@ -32,14 +32,93 @@ babyprey <- subset(preyfish, preyfish$FK_Survey_ID == "11")
 
 ##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
 baby_comshin <- subset(babyprey, babyprey$`Species code` == "198")
+baby_comshin_freq<- plyr::count(baby_comshin, "FLEN")
+# Counts the number of observations according to FLEN
+baby_comshin_freq$freqlbls <- as.character(baby_comshin_freq$freq)
+# Calculating percent in each size class
+baby_comshin_freq$pct <- round(baby_comshin_freq$freq/sum(baby_comshin_freq$freq)*100)
+baby_comshin_freq$pctlbls <- as.character(baby_comshin_freq$pct)
+baby_comshin_freq$pctlbls <- paste(baby_comshin_freq$pctlbls,"%",sep="") # add % to labels
+
 baby_pseed <- subset(babyprey, babyprey$`Species code` == "313")
+baby_pseed_freq<- plyr::count(baby_pseed, "FLEN")
+baby_pseed_freq$freqlbls <- as.character(baby_pseed_freq$freq)
+baby_pseed_freq$pct <- round(baby_pseed_freq$freq/sum(baby_pseed_freq$freq)*100)
+baby_pseed_freq$pctlbls <- as.character(baby_pseed_freq$pct)
+baby_pseed_freq$pctlbls <- paste(baby_pseed_freq$pctlbls,"%",sep="")
+
 baby_perch <- subset(babyprey, babyprey$`Species code` == "331")
+baby_perch_freq<- plyr::count(baby_perch, "FLEN")
+baby_perch_freq$freqlbls <- as.character(baby_perch_freq$freq)
+baby_perch_freq$pct <- round(baby_perch_freq$freq/sum(baby_perch_freq$freq)*100)
+baby_perch_freq$pctlbls <- as.character(baby_perch_freq$pct)
+baby_perch_freq$pctlbls <- paste(baby_perch_freq$pctlbls,"%",sep="")
 
 ```
 
-```{r Baby Lk. prey fish size distributions}
+```{r Baby Lk. common shiner prey fish size distributions}
+##Size histogram
+ggplot(data = baby_comshin, aes(FLEN)) + 
+  geom_histogram(breaks=seq(60, 130, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Baby Lake Common Shiner Size", x="Fork Length (mm)", y="Count")
+
+##Size histogram w/ percent labels
+ggplot(data=baby_comshin_freq, aes(x=FLEN, y=freq))+
+  geom_bar(stat="identity",width=8, colour = "black")+
+  xlab("Fork Length (mm)")+
+  ylab("Frequency")+
+  ggtitle("Baby Lake Common Shiner Size Distribution")+
+  scale_y_continuous()+
+  scale_x_continuous()+
+  geom_text(aes(label=pctlbls), vjust=-0.5)+
+  theme_bw()
+
+```
+
+```{r Baby Lk. pumpkinseed prey fish size distributions}
+
+ggplot(data = baby_pseed, aes(FLEN)) + 
+  geom_histogram(breaks=seq(60, 120, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Baby Lake Pumpkinseed Size", x="Fork Length (mm)", y="Count")
+
+##Size histogram w/ percent labels
+ggplot(data=baby_pseed_freq, aes(x=FLEN, y=freq))+
+  geom_bar(stat="identity",width=8, colour = "black")+
+  xlab("Fork Length (mm)")+
+  ylab("Frequency")+
+  ggtitle("Baby Lake Pumpkinseed Size Distribution")+
+  scale_y_continuous()+
+  scale_x_continuous()+
+  geom_text(aes(label=pctlbls), vjust=-0.5)+
+  theme_bw()
+
+```
+
+```{r Baby Lk. yellow perch prey fish size distributions}
+
+ggplot(data = baby_perch, aes(FLEN)) + 
+  geom_histogram(breaks=seq(50, 210, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Baby Lake Yellow Perch Size", x="Fork Length (mm)", y="Count")
 
 
+ggplot(data=baby_perch_freq, aes(x=FLEN, y=freq))+
+  geom_bar(stat="identity",width=8, colour = "black")+
+  xlab("Fork Length (mm)")+
+  ylab("Frequency")+
+  ggtitle("Baby Lake Yellow Perch Size Distribution")+
+  scale_y_continuous()+
+  scale_x_continuous()+
+  geom_text(aes(label=pctlbls), vjust=-0.5)+
+  theme_bw()
 
 ```
 
@@ -49,13 +128,46 @@ daisyprey <- subset(preyfish, preyfish$FK_Survey_ID == "14")
 
 ##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
 daisy_bbull <- subset(daisyprey, daisyprey$`Species code` == "233")
+
+
+
 daisy_smb <- subset(daisyprey, daisyprey$`Species code` == "316")
+
+
+
 daisy_perch <- subset(daisyprey, daisyprey$`Species code` == "331")
 
 ```
 
-```{r Daisy Lk. prey fish size distributions}
+```{r Daisy Lk. brown bullhead prey fish size distributions}
 
+ggplot(data = daisy_bbull, aes(FLEN)) + 
+  geom_histogram(breaks=seq(80, 210, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Daisy Lake Brown Bullhead Size", x="Fork Length (mm)", y="Count")
 
+```
+
+```{r Daisy Lk. smallmouth bass prey fish size distributions}
+
+ggplot(data = daisy_smb, aes(FLEN)) + 
+  geom_histogram(breaks=seq(100, 210, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Daisy Lake Smallmouth Bass Size", x="Fork Length (mm)", y="Count")
+
+```
+
+```{r Daisy Lk. yellow perch prey fish size distributions}
+
+ggplot(data = daisy_perch, aes(FLEN)) + 
+  geom_histogram(breaks=seq(30, 180, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Daisy Lake Yellow Perch Size", x="Fork Length (mm)", y="Count")
 
 ```
