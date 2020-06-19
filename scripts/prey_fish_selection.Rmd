@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readr)
 
-data <- read_csv("data/studylakes_catchdata.csv")
+data <- read_csv("../data/studylakes_catchdata.csv")
 data <- data[c(-20,-21,-22)]
 
 ```

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readr)
 
-data <- read_csv("data/studylakes_catchdata.csv")
+data <- read_csv("../data/studylakes_catchdata.csv")
 data <- data[c(-20,-21,-22)]
 
 ```
@@ -32,8 +32,41 @@ daisylarge <- subset(largefish, largefish$FK_Survey_ID == "14")
 
 ##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
 #Smallmouth Bass
-daisy_smb <- subset(daisylarge, daisylarge$`Species code` == "198")
-daisy_smb_freq<- plyr::count(daisy_smb, "FLEN")
+daisy_smb <- subset(daisylarge, daisylarge$`Species code` == "316")
+
+#BINNING#
+smb_breaks <- c(200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460)
+# specify interval/bin labels
+smb_tags <- c("[200-220)","[220-240)", "[240-260)", "[260-280)", "[280-300)", "[300-320)","[320-340)", "[340-360)","[360-380)", "[380-400)", "[400-420)", "[420-440)", "[440-460)")
+smb_group_tags <- cut(daisy_smb$FLEN, 
+                  breaks=smb_breaks, 
+                  include.lowest=TRUE, 
+                  right=FALSE, 
+                  labels=smb_tags)
+v <- daisy_smb %>% select(FLEN, `Fish #`) #pick the variable 
+smb_bin <- as_tibble(v) %>% 
+  mutate(tag = case_when(
+    FLEN < 220 ~ smb_tags[1],
+    FLEN >= 220 & FLEN < 240 ~ smb_tags[2],
+    FLEN >= 240 & FLEN < 260 ~ smb_tags[3],
+    FLEN >= 260 & FLEN < 280 ~ smb_tags[4],
+    FLEN >= 280 & FLEN < 300 ~ smb_tags[5],
+    FLEN >= 300 & FLEN < 320 ~ smb_tags[6],
+    FLEN >= 320 & FLEN < 340 ~ smb_tags[7],
+    FLEN >= 340 & FLEN < 360 ~ smb_tags[8],
+    FLEN >= 360 & FLEN < 380 ~ smb_tags[9],
+    FLEN >= 380 & FLEN < 400 ~ smb_tags[10],
+    FLEN >= 400 & FLEN < 420 ~ smb_tags[11],
+    FLEN >= 420 & FLEN < 440 ~ smb_tags[12],
+    FLEN >= 440 & FLEN < 460 ~ smb_tags[13]
+    ))
+summary(smb_bin)
+smb_bin$tag <- factor(smb_bin$tag,
+                       levels = smb_tags,
+                       ordered = FALSE)
+summary(smb_bin$tag)
+##Frequencies based on bins
+daisy_smb_freq<- plyr::count(smb_bin, "tag")
 # Counts the number of observations according to FLEN
 daisy_smb_freq$freqlbls <- as.character(daisy_smb_freq$freq)
 # Calculating percent in each size class
@@ -43,8 +76,39 @@ daisy_smb_freq$pctlbls <- as.character(daisy_smb_freq$pct)
 daisy_smb_freq$pctlbls <- paste(daisy_smb_freq$pctlbls,"%",sep="")
 
 #Walleye
-daisy_walleye <- subset(daisylarge, daisylarge$`Species code` == "198")
-daisy_walleye_freq<- plyr::count(daisy_walleye, "FLEN")
+daisy_walleye <- subset(daisylarge, daisylarge$`Species code` == "334")
+
+#BINNING#
+walleye_breaks <- c(220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440)
+# specify interval/bin labels
+walleye_tags <- c("[220-240)", "[240-260)", "[260-280)", "[280-300)", "[300-320)","[320-340)", "[340-360)","[360-380)", "[380-400)", "[400-420)", "[420-440)")
+walleye_group_tags <- cut(daisy_walleye$FLEN, 
+                  breaks=walleye_breaks, 
+                  include.lowest=TRUE, 
+                  right=FALSE, 
+                  labels=walleye_tags)
+z <- daisy_walleye %>% select(FLEN, `Fish #`) #pick the variable 
+walleye_bin <- as_tibble(z) %>% 
+  mutate(tag = case_when(
+    FLEN < 240 ~ walleye_tags[1],
+    FLEN >= 240 & FLEN < 260 ~ walleye_tags[2],
+    FLEN >= 260 & FLEN < 280 ~ walleye_tags[3],
+    FLEN >= 280 & FLEN < 300 ~ walleye_tags[4],
+    FLEN >= 300 & FLEN < 320 ~ walleye_tags[5],
+    FLEN >= 320 & FLEN < 340 ~ walleye_tags[6],
+    FLEN >= 340 & FLEN < 360 ~ walleye_tags[7],
+    FLEN >= 360 & FLEN < 380 ~ walleye_tags[8],
+    FLEN >= 380 & FLEN < 400 ~ walleye_tags[9],
+    FLEN >= 400 & FLEN < 420 ~ walleye_tags[10],
+    FLEN >= 420 & FLEN < 440 ~ walleye_tags[11]
+    ))
+summary(walleye_bin)
+walleye_bin$tag <- factor(walleye_bin$tag,
+                       levels = walleye_tags,
+                       ordered = FALSE)
+summary(walleye_bin$tag)
+##Frequencies based on bins
+daisy_walleye_freq<- plyr::count(walleye_bin, "tag")
 # Counts the number of observations according to FLEN
 daisy_walleye_freq$freqlbls <- as.character(daisy_walleye_freq$freq)
 # Calculating percent in each size class
@@ -58,22 +122,23 @@ daisy_walleye_freq$pctlbls <- paste(daisy_walleye_freq$pctlbls,"%",sep="")
 ```{r Daisy Lk. smallmouth bass large fish size distributions}
 ##Size histogram
 ggplot(data = daisy_smb, aes(FLEN)) + 
-  geom_histogram(breaks=seq(60, 130, by = 10), 
+  geom_histogram(breaks=seq(210, 450, by = 20), 
                  col="black", 
                  fill="grey", 
                  alpha = .7) + 
   labs(title="Daisy Lake Smallmouth Bass Size", x="Fork Length (mm)", y="Count")
 
 ##Size histogram w/ percent labels
-ggplot(data=daisy_smb_freq, aes(x=FLEN, y=freq))+
+ggplot(data=daisy_smb_freq, aes(x=tag, y=freq))+
   geom_bar(stat="identity",width=8, colour = "black")+
   xlab("Fork Length (mm)")+
   ylab("Frequency")+
   ggtitle("Daisy Lake Smallmouth Bass Size Distribution")+
   scale_y_continuous()+
-  scale_x_continuous()+
+  scale_x_discrete()+
   geom_text(aes(label=pctlbls), vjust=-0.5)+
   theme_bw()
+
 
 ```
 
@@ -82,7 +147,7 @@ ggplot(data=daisy_smb_freq, aes(x=FLEN, y=freq))+
 ```{r Daisy Lk. walleye large fish size distributions}
 ##Size histogram
 ggplot(data = daisy_walleye, aes(FLEN)) + 
-  geom_histogram(breaks=seq(60, 130, by = 10), 
+  geom_histogram(breaks=seq(230, 440, by = 10), 
                  col="black", 
                  fill="grey", 
                  alpha = .7) + 
