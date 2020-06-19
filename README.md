@@ -20,9 +20,9 @@ Periphyton biomass data was collected using suspended periphyton colonization di
 
 Benthic invertebrate community survey data was collected using coarse-mesh leaf packs suspended at delta mouths for each study lake. Preserved coarse-mesh leaf pack inverts will be used to back-calculate benthic invert biomass for each lake. Stable isotope samples of mayflies were taken from representative sites along the shoreline of each basin or by the cardinal directions for smaller lakes.
 
-Zooplankton community survey data from zooplankton hauls taken at the deepest zone of each lake during July 2018. Stable isotope samples of zooplankton were taken from the deepest zone within each basin of the lake.
+Zooplankton community survey data was collected from zooplankton hauls taken at the deepest zone of each lake during July 2018. Stable isotope samples of zooplankton were taken from the deepest zone within each basin of the lake.
 
-Fish community survey data using CRADL protocol - OMNRF BsM protocol with an integrated Nordic net per depth strata, fishing at the same time as a small-mesh and large-mesh BsM for the stratum. Surveys took place from July to September 2019.
+Fish community survey data was collected using CRADL protocol - OMNRF BsM protocol with an integrated Nordic net per depth strata, fishing at the same time as a small-mesh and large-mesh BsM for the stratum. Surveys took place from July to September 2019.
 
 ## Contributors
 
