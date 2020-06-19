@@ -1,0 +1,104 @@
+---
+title: "Large-bodied Fish Size Selection"
+author: "J Dawson"
+date: '2020-06-18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import data}
+library(tidyverse)
+library(readr)
+
+data <- read_csv("data/studylakes_catchdata.csv")
+data <- data[c(-20,-21,-22)]
+
+```
+
+##Want to find the distribution of size for each large fish species for each lake to determine isotope sample gradient, so we only keep fish with FLEN >200mm.
+
+```{r subset data for large fish only}
+
+largefish <- subset(data, data$FLEN>200)
+
+```
+
+```{r subset data for Daisy Lk. large fish}
+
+daisylarge <- subset(largefish, largefish$FK_Survey_ID == "14")
+
+##Subset by species w/ more than 10 samples - aka where we have to select on the gradient
+#Smallmouth Bass
+daisy_smb <- subset(daisylarge, daisylarge$`Species code` == "198")
+daisy_smb_freq<- plyr::count(daisy_smb, "FLEN")
+# Counts the number of observations according to FLEN
+daisy_smb_freq$freqlbls <- as.character(daisy_smb_freq$freq)
+# Calculating percent in each size class
+daisy_smb_freq$pct <- round(daisy_smb_freq$freq/sum(daisy_smb_freq$freq)*100)
+daisy_smb_freq$pctlbls <- as.character(daisy_smb_freq$pct)
+# Adding % to the labels
+daisy_smb_freq$pctlbls <- paste(daisy_smb_freq$pctlbls,"%",sep="")
+
+#Walleye
+daisy_walleye <- subset(daisylarge, daisylarge$`Species code` == "198")
+daisy_walleye_freq<- plyr::count(daisy_walleye, "FLEN")
+# Counts the number of observations according to FLEN
+daisy_walleye_freq$freqlbls <- as.character(daisy_walleye_freq$freq)
+# Calculating percent in each size class
+daisy_walleye_freq$pct <- round(daisy_walleye_freq$freq/sum(daisy_walleye_freq$freq)*100)
+daisy_walleye_freq$pctlbls <- as.character(daisy_walleye_freq$pct)
+# Adding % to the labels
+daisy_walleye_freq$pctlbls <- paste(daisy_walleye_freq$pctlbls,"%",sep="")
+
+```
+
+```{r Daisy Lk. smallmouth bass large fish size distributions}
+##Size histogram
+ggplot(data = daisy_smb, aes(FLEN)) + 
+  geom_histogram(breaks=seq(60, 130, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Daisy Lake Smallmouth Bass Size", x="Fork Length (mm)", y="Count")
+
+##Size histogram w/ percent labels
+ggplot(data=daisy_smb_freq, aes(x=FLEN, y=freq))+
+  geom_bar(stat="identity",width=8, colour = "black")+
+  xlab("Fork Length (mm)")+
+  ylab("Frequency")+
+  ggtitle("Daisy Lake Smallmouth Bass Size Distribution")+
+  scale_y_continuous()+
+  scale_x_continuous()+
+  geom_text(aes(label=pctlbls), vjust=-0.5)+
+  theme_bw()
+
+```
+
+##Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need smallmouth bass with the following fork lengths: 
+
+```{r Daisy Lk. walleye large fish size distributions}
+##Size histogram
+ggplot(data = daisy_walleye, aes(FLEN)) + 
+  geom_histogram(breaks=seq(60, 130, by = 10), 
+                 col="black", 
+                 fill="grey", 
+                 alpha = .7) + 
+  labs(title="Daisy Lake Walleye Size", x="Fork Length (mm)", y="Count")
+
+##Size histogram w/ percent labels
+ggplot(data=daisy_walleye_freq, aes(x=FLEN, y=freq))+
+  geom_bar(stat="identity",width=8, colour = "black")+
+  xlab("Fork Length (mm)")+
+  ylab("Frequency")+
+  ggtitle("Daisy Lake Walleye Size Distribution")+
+  scale_y_continuous()+
+  scale_x_continuous()+
+  geom_text(aes(label=pctlbls), vjust=-0.5)+
+  theme_bw()
+
+```
+
+##Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need walleye with the following fork lengths: 
