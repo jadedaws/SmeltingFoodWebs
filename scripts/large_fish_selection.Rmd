@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+###Let's import the data from GitHub
+
 ```{r import data}
 library(tidyverse)
 library(readr)
@@ -18,13 +20,19 @@ data <- data[c(-20,-21,-22)]
 
 ```
 
-##Want to find the distribution of size for each large fish species for each lake to determine isotope sample gradient, so we only keep fish with FLEN >200mm.
+###We want to find the distribution of size for each large fish species for each lake to determine isotope sample gradient, so we only keep fish with FLEN >200mm.
 
 ```{r subset data for large fish only}
 
 largefish <- subset(data, data$FLEN>200)
 
 ```
+
+###We subset the data for Daisy Lake smallmouth bass and walleye, which are the only large fish species with more than 10 isotope samples. We have to bin the size ranges for each species since there are so many samples of different size. We do this to have meaningful/high enough frequencies to allow proportional sampling (ex. most individual size frequencies were ~2%).
+
+**All large fish species caught from Baby Lake had less than 10 individuals so subsampling is not necessary. As a result, 1 northern pike (131, F#001) and 4 white suckers (163, F#002-005) were sampled for isotopes.**
+
+**From the Daisy Lake survey, northern pike (131) and white suckers (163) had less than 10 individuals caught, so subsampling is not necessary for these species. Here is a list of the fish that were sampled for these species from Daisy Lake: Northern pike (131) - F#034, 065, 045, 064, 012, 047, 013, and 063; White sucker (163) - F#046 and 066 **
 
 ```{r subset data for Daisy Lk. large fish}
 
@@ -119,6 +127,8 @@ daisy_walleye_freq$pctlbls <- paste(daisy_walleye_freq$pctlbls,"%",sep="")
 
 ```
 
+###Starting with smallmouth bass, we create histograms to visualize the size distributions.
+
 ```{r Daisy Lk. smallmouth bass large fish size distributions}
 ##Size histogram
 ggplot(data = daisy_smb, aes(FLEN)) + 
@@ -130,7 +140,7 @@ ggplot(data = daisy_smb, aes(FLEN)) +
 
 ##Size histogram w/ percent labels
 ggplot(data=daisy_smb_freq, aes(x=tag, y=freq))+
-  geom_bar(stat="identity",width=8, colour = "black")+
+  geom_bar(stat="identity",width=1, colour = "black")+
   xlab("Fork Length (mm)")+
   ylab("Frequency")+
   ggtitle("Daisy Lake Smallmouth Bass Size Distribution")+
@@ -142,28 +152,38 @@ ggplot(data=daisy_smb_freq, aes(x=tag, y=freq))+
 
 ```
 
-##Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need smallmouth bass with the following fork lengths: 
+**Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need smallmouth bass with the following fork lengths: 1- 220-240mm, 2- 240-260mm, 1- 260-280mm, 2- 280-300mm, 1- 340-360mm, 1- 360-380mm, and 2- 380-400mm.**
+
+*Note: for instances when frequencies would mean that more than 10 fish would be sampled, we selected sizes that would incorporate the largest size gradient possible.*
+
+We will sample smallmouth bass with the following fish numbers: 049, 011, 037, 028, 024, 027, 043, 004, 026, and 060.
+
+###We now create the same visualizations for the Daisy Lake walleye size distributions.
 
 ```{r Daisy Lk. walleye large fish size distributions}
 ##Size histogram
 ggplot(data = daisy_walleye, aes(FLEN)) + 
-  geom_histogram(breaks=seq(230, 440, by = 10), 
+  geom_histogram(breaks=seq(230, 440, by = 20), 
                  col="black", 
                  fill="grey", 
                  alpha = .7) + 
   labs(title="Daisy Lake Walleye Size", x="Fork Length (mm)", y="Count")
 
 ##Size histogram w/ percent labels
-ggplot(data=daisy_walleye_freq, aes(x=FLEN, y=freq))+
-  geom_bar(stat="identity",width=8, colour = "black")+
+ggplot(data=daisy_walleye_freq, aes(x=tag, y=freq))+
+  geom_bar(stat="identity",width=1, colour = "black")+
   xlab("Fork Length (mm)")+
   ylab("Frequency")+
   ggtitle("Daisy Lake Walleye Size Distribution")+
   scale_y_continuous()+
-  scale_x_continuous()+
+  scale_x_discrete()+
   geom_text(aes(label=pctlbls), vjust=-0.5)+
   theme_bw()
 
 ```
 
-##Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need walleye with the following fork lengths: 
+**Based on the Daisy Lake catch data to proportionately select samples for isotope analysis we need walleye with the following fork lengths: 1- 220-240mm, 4- 240-260mm, 1- 260-280mm, 1- 280-300mm, 1- 320-340mm, 1- 380-400mm, and 1- 420-440mm.**
+
+*Note: for instances when frequencies would mean that more than 10 fish would be sampled, we selected sizes that would incorporate the largest size gradient possible.*
+
+We will sample walleye with the following fish numbers: 032, 055, 033, 031, 015, 018, 057, 016, 022, and 059.
