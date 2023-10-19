@@ -1,0 +1,713 @@
+---
+title: "WORK-SESH-04-02"
+author: "J Dawson"
+date: '2021-04-02'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*Focus on perch and smallmouth bass across lakes*
+**Add relative density of perch + smb from 3 lakes - CPUE, biomass, abundance**
+**Add mean body size, CPUE, weighted CPUE**
+
+```{r Importing data}
+rm(list=ls())
+setwd("~/Desktop/Data/Working-Data")
+library(naniar)
+library(dplyr)
+library(ggplot2)
+
+catch_data <- read.csv("2019-CRADL_BB-DY-NL-WORKING.csv")
+catch_data <- catch_data[!is.na(catch_data$FK_Survey_ID),]
+catch_data$Water <- NA
+catch_data$Water[catch_data$FK_Survey_ID == "11"] <- "Baby Lk."
+catch_data$Water[catch_data$FK_Survey_ID == "14"] <- "Daisy Lk."
+catch_data$Water[catch_data$FK_Survey_ID == "22"] <- "Nelson Lk."
+catch_data <- catch_data %>%
+  select(Water, everything())
+catch_data$Species.code <- as.factor(catch_data$Species.code)
+catch_data$Effort <- as.factor(catch_data$Effort)
+
+#adding BsM lakes data
+bsm <- read.csv("CRADL_catch_data_2019-WORKING.csv")
+bsm <- bsm[bsm$Species.code == "316" | bsm$Species.code == "331",]
+bsm <- bsm[!bsm$FK_Survey_ID == 6 & !bsm$FK_Survey_ID == 11 & !bsm$FK_Survey_ID == 14 & !bsm$FK_Survey_ID == 18 & !bsm$FK_Survey_ID == 21 & !bsm$FK_Survey_ID == 22 & !bsm$FK_Survey_ID == 23 & !bsm$FK_Survey_ID == 24 & !bsm$FK_Survey_ID == 29,]
+
+bsm$Water <- NA
+bsm$Water[bsm$FK_Survey_ID == "1"] <- "Brodill Lk."
+bsm$Water[bsm$FK_Survey_ID == "2"] <- "Wavy Lk."
+bsm$Water[bsm$FK_Survey_ID == "3"] <- "Great Mountain Lk."
+bsm$Water[bsm$FK_Survey_ID == "4"] <- "Chief Lk."
+bsm$Water[bsm$FK_Survey_ID == "5"] <- "White Oak Lk."
+bsm$Water[bsm$FK_Survey_ID == "7"] <- "Davis Lk."
+bsm$Water[bsm$FK_Survey_ID == "8"] <- "George Lk."
+bsm$Water[bsm$FK_Survey_ID == "9"] <- "Johnnie Lk."
+bsm$Water[bsm$FK_Survey_ID == "10"] <- "Wolf Lk."
+bsm$Water[bsm$FK_Survey_ID == "12"] <- "Laundrie Lk."
+bsm$Water[bsm$FK_Survey_ID == "13"] <- "Whitepine Lk."
+bsm$Water[bsm$FK_Survey_ID == "15"] <- "Peter Lk."
+bsm$Water[bsm$FK_Survey_ID == "16"] <- "Bowland Lk."
+bsm$Water[bsm$FK_Survey_ID == "17"] <- "Tyson Lk."
+bsm$Water[bsm$FK_Survey_ID == "19"] <- "Kelly 27 Lk."
+bsm$Water[bsm$FK_Survey_ID == "20"] <- "Clearwater Lk."
+bsm$Water[bsm$FK_Survey_ID == "25"] <- "Bell Lk."
+bsm$Water[bsm$FK_Survey_ID == "26"] <- "Matagamasi Lk."
+bsm$Water[bsm$FK_Survey_ID == "27"] <- "Marina Lk."
+bsm$Water[bsm$FK_Survey_ID == "28"] <- "Florence Lk."
+
+bsm <- bsm %>%
+  select(Water, everything())
+bsm$Species.code <- as.factor(bsm$Species.code)
+bsm$Effort <- as.factor(bsm$Effort)
+
+bsm <- bsm[-c(21:23)]
+
+#subsetting BB DY NL for smallmouth bass and perch
+common_catch <- catch_data[catch_data$Species.code == "316" | catch_data$Species.code == "331",]
+common_catch <- common_catch[!is.na(common_catch$FK_Survey_ID),]
+
+#combining bsm and study lakes
+smb_yp_dat <- rbind(bsm, common_catch)
+smb_yp_dat$StudyLake <- "NE BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Baby Lk."] <- "Study Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Daisy Lk."] <- "Study Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Nelson Lk."] <- "Study Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Brodill Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Wavy Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Great Mountain Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Chief Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "White Oak Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "George Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Johnnie Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Peter Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Tyson Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Clearwater Lk."] <- "SW BsM Lakes"
+smb_yp_dat$StudyLake[smb_yp_dat$Water == "Bell Lk."] <- "SW BsM Lakes"
+
+#ordering by distance from smelter
+smb_yp_dat$order <- NA
+smb_yp_dat$order[smb_yp_dat$Water == "Baby Lk."] <- 1
+smb_yp_dat$order[smb_yp_dat$Water == "Daisy Lk."] <- 2
+smb_yp_dat$order[smb_yp_dat$Water == "Nelson Lk."] <- 3
+smb_yp_dat$order[smb_yp_dat$Water == "Brodill Lk."] <- 1
+smb_yp_dat$order[smb_yp_dat$Water == "Wavy Lk."] <- 5
+smb_yp_dat$order[smb_yp_dat$Water == "Great Mountain Lk."] <- 10
+smb_yp_dat$order[smb_yp_dat$Water == "Chief Lk."] <- 2
+smb_yp_dat$order[smb_yp_dat$Water == "White Oak Lk."] <- 4
+smb_yp_dat$order[smb_yp_dat$Water == "George Lk."] <- 11
+smb_yp_dat$order[smb_yp_dat$Water == "Johnnie Lk."] <- 9
+smb_yp_dat$order[smb_yp_dat$Water == "Peter Lk."] <- 6
+smb_yp_dat$order[smb_yp_dat$Water == "Tyson Lk."] <- 7
+smb_yp_dat$order[smb_yp_dat$Water == "Clearwater Lk."] <- 3
+smb_yp_dat$order[smb_yp_dat$Water == "Bell Lk."] <- 8
+smb_yp_dat$order[smb_yp_dat$Water == "Matagamasi Lk."] <- 1
+smb_yp_dat$order[smb_yp_dat$Water == "Kelly Lk. #27"] <- 2
+smb_yp_dat$order[smb_yp_dat$Water == "Wolf Lk."] <- 3
+smb_yp_dat$order[smb_yp_dat$Water == "Davis Lk."] <- 4
+smb_yp_dat$order[smb_yp_dat$Water == "Bowland Lk."] <- 5
+smb_yp_dat$order[smb_yp_dat$Water == "Laundrie Lk."] <- 6
+smb_yp_dat$order[smb_yp_dat$Water == "Florence Lk."] <- 7
+smb_yp_dat$order[smb_yp_dat$Water == "Whitepine Lk."] <- 8
+smb_yp_dat$order[smb_yp_dat$Water == "Marine Lk."] <- 9
+smb_yp_dat$order <- as.numeric(smb_yp_dat$order)
+
+#removing unnecessary columns from total catch data
+catch_data <- catch_data[c(1,5,7:11)]
+```
+
+```{r FLEN comparison SMB and YPERCH study lakes/Baby vs. bsm}
+smb_ypFLEN <- smb_yp_dat %>% 
+  group_by(Water, Species.code) %>%
+  summarise(mean.body = mean(FLEN), sd.body = sd(FLEN), n = n())
+smb_ypFLEN <- na.omit(smb_ypFLEN)
+smb_ypFLEN$se <- smb_ypFLEN$sd.body/(sqrt(smb_ypFLEN$n))
+
+smb_ypFLEN$StudyLake <- "NE BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Baby Lk."] <- "Study Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Daisy Lk."] <- "Study Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Nelson Lk."] <- "Study Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Brodill Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Wavy Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Great Mountain Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Chief Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "White Oak Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "George Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Johnnie Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Peter Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Tyson Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Clearwater Lk."] <- "SW BsM Lakes"
+smb_ypFLEN$StudyLake[smb_ypFLEN$Water == "Bell Lk."] <- "SW BsM Lakes"
+
+#mean FLEN for groups
+smb_yp_groupFLEN <- smb_ypFLEN %>%
+  group_by(StudyLake, Species.code) %>%
+  summarise(mean.body = mean(mean.body), sd.body = mean(sd.body), n = n())
+smb_yp_groupFLEN$se <- smb_yp_groupFLEN$sd.body/(sqrt(smb_yp_groupFLEN$n))
+
+#add groups as water
+smb_yp_groupFLEN$Water <- smb_yp_groupFLEN$StudyLake
+
+#bind dfs
+groupFLEN_smbyp <- rbind(smb_ypFLEN, smb_yp_groupFLEN)
+
+#ordering by distance from smelter
+groupFLEN_smbyp$order <- NA
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "NE BsM Lake"] <- 1
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Brodill Lk."] <- 2
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Chief Lk."] <- 3
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Clearwater Lk."] <- 4
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "White Oak Lk."] <- 5
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Wavy Lk."] <- 6
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Peter Lk."] <- 7
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Tyson Lk."] <- 8
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Bell Lk."] <- 9
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Johnnie Lk."] <- 10
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Great Mountain Lk."] <- 11
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "George Lk."] <- 12
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "SW BsM Lake"] <- 13
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Matagamasi Lk."] <- 14
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Kelly 27 Lk."] <- 15
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Wolf Lk."] <- 16
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Davis Lk."] <- 17
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Bowland Lk."] <- 18
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Laundrie Lk."] <- 19
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Florence Lk."] <- 20
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Whitepine Lk."] <- 21
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Marina Lk."] <- 22
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Study Lake"] <- 23
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Baby Lk."] <- 24
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Daisy Lk."] <- 25
+groupFLEN_smbyp$order[groupFLEN_smbyp$Water == "Nelson Lk."] <- 26
+groupFLEN_smbyp$order <- as.numeric(groupFLEN_smbyp$order)
+
+smb_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "316",]
+yp_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "331",]
+
+library(tidyr)
+library(drlib)
+
+#smb
+ggplot(smb_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + sd.body, ymin = mean.body - sd.body)) +
+  xlab("Lake") +
+  ylab("Mean smallmouth bass fork length (mm) +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+ggplot(smb_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + se, ymin = mean.body - se)) +
+  xlab("Lake") +
+  ylab("Mean smallmouth bass fork length (mm) +/- se") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+smb1<-ggplot(smb_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + se, ymin = mean.body - se)) +
+  xlab("Lake") +
+  ylab("Mean smallmouth bass fork length (mm) +/- se") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+smb1 + geom_point(data=subset(smb_yp_dat, Species.code %in% 316), aes(x = reorder(Water, order), y = FLEN, group = Water), colour = "gray", shape = 1)
+
+#perch
+ggplot(yp_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + sd.body, ymin = mean.body - sd.body)) +
+  xlab("Lake") +
+  ylab("Mean yellow perch fork length (mm) +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+ggplot(yp_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + se, ymin = mean.body - se)) +
+  xlab("Lake") +
+  ylab("Mean yellow perch fork length (mm) +/- se") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+
+ggplot(subset(smb_yp_dat, Species.code %in% 331), aes(x = reorder(Water, order), y = FLEN, group = Water)) +
+  geom_violin(fill = "black") +
+  xlab("Lake") +
+  ylab("Yellow perch fork length (mm) +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+testplot1<-ggplot(subset(smb_yp_dat, Species.code %in% 331), aes(x = reorder(Water, order), y = FLEN, group = Water)) +
+  geom_point(colour = "gray") +
+  xlab("Lake") +
+  ylab("Yellow perch fork length (mm) +/- se") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+#testplot1 + geom_point(data = yp_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  #geom_errorbar(data=yp_FLENgroup, aes(ymax = mean.body + se, ymin = mean.body - se))
+
+testplot2<-ggplot(yp_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + se, ymin = mean.body - se)) +
+  xlab("Lake") +
+  ylab("Mean yellow perch fork length (mm) +/- se") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+testplot2 + geom_point(data=subset(smb_yp_dat, Species.code %in% 331), aes(x = reorder(Water, order), y = FLEN, group = Water), colour = "gray", shape = 1)
+
+### Histogram ###
+#smb
+ggplot(subset(smb_yp_dat, Species.code %in% 316), aes(FLEN, colour = Water, group = Species.code)) +
+  geom_histogram() +
+  xlab("SMB - FLEN (mm)") +
+  ylab("Frequency") +
+  scale_y_continuous() +
+  scale_x_continuous() +
+  facet_wrap(~Water)+
+  theme_bw()
+
+#perch
+ggplot(subset(smb_yp_dat, Species.code %in% 331), aes(FLEN, colour = Water, group = Species.code)) +
+  geom_histogram() +
+  xlab("YPERCH - FLEN (mm)") +
+  ylab("Frequency") +
+  scale_y_continuous() +
+  scale_x_continuous() +
+  facet_wrap(~Water)+
+  theme_bw()
+```
+
+
+**Study lakes Body size calculations and plotting**
+```{r Body size SMB and YPERCH}
+### FLEN ###
+cc_sum1 <- common_catch %>% 
+  group_by(Water, Species.code) %>%
+  summarise(mean.body = mean(FLEN), sd.body = sd(FLEN))
+cc_sum1 <- na.omit(cc_sum1)
+
+## Plot - Mean, sd
+ggplot(cc_sum1, aes(x = Species.code, y = mean.body, colour = Species.code, group = Species.code)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.body + sd.body, ymin = mean.body - sd.body)) +
+  xlab("Fish species") +
+  ylab("Mean fork length (mm) +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water)+
+  theme_bw()
+
+## Plot - boxplot w/ quantiles
+ggplot(common_catch, aes(x = Species.code, y = FLEN, fill = Species.code, group = Species.code)) +
+  geom_boxplot() +
+  xlab("Fish species") +
+  ylab("Mean fork length (mm) +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water)+
+  theme_bw()
+
+
+### RWT ### - not needed; do have for the perch used for isotope analysis
+cc_2 <- common_catch[!is.na(common_catch$RWT),]
+cc_sum2 <- cc_2 %>%
+  group_by(Water, Species.code) %>%
+  summarise(mean.rwt = mean(RWT), sd.rwt = sd(RWT))
+
+```
+
+**Abundance calculations**
+```{r Abundance SMB and YPERCH}
+common_catch$count <- 1
+cc_sum3 <- common_catch %>%
+  group_by(Water, Species.code) %>%
+  summarise(abundance = sum(count))
+
+cc_sum = cc_sum1
+cc_sum$abundance = cc_sum3$abundance
+
+#plot - add number
+ggplot(cc_sum, aes(x = Species.code, y = abundance, fill = Species.code, group = Species.code)) +
+  geom_col() +
+  xlab("Fish species") +
+  ylab("Abundance") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  geom_text(aes(label=cc_sum$abundance), vjust=-0.4)+
+  facet_wrap(~Water) +
+  theme_bw()
+
+ggplot(cc_sum, aes(x = Species.code, y = abundance, colour = Species.code, group = Species.code)) +
+  geom_point() +
+  xlab("Fish species") +
+  ylab("Abundance") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water)+
+  theme_bw()
+```
+
+```{r Abundance all fish}
+catch_data$count <- 1
+catch_sum1 <- catch_data %>%
+  group_by(Water, Species.code) %>%
+  summarise(abundance = sum(count))
+
+catch_sum = catch_sum1
+catch_sum$abundance = catch_sum1$abundance
+
+#plot - add number
+ggplot(catch_sum, aes(x = Species.code, y = abundance, fill = Species.code, group = Species.code)) +
+  geom_col() +
+  xlab("Fish species") +
+  ylab("Abundance") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  geom_text(aes(label=catch_sum$abundance), vjust=-0.4)+
+  facet_wrap(~Water) +
+  theme_bw()
+
+ggplot(catch_sum, aes(x = Species.code, y = abundance, colour = Species.code, group = Species.code)) +
+  geom_point() +
+  xlab("Fish species") +
+  ylab("Abundance") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water)+
+  theme_bw()
+```
+
+*Relative Density calculations - CPUE? Weighted CPUE?*
+```{r Relative Density all fish}
+catch_sum2 <- catch_data %>%
+  group_by(Water, Species.code) %>%
+  summarise(abundance = sum(count))
+
+catch_sum2$eff <- NA
+catch_sum2$eff[catch_sum2$Water == "Baby Lk."] <- 20
+catch_sum2$eff[catch_sum2$Water == "Daisy Lk."] <- 20
+catch_sum2$eff[catch_sum2$Water == "Nelson Lk."] <- 39
+
+catch_sum2$CPUE = catch_sum2$abundance/catch_sum2$eff
+
+#plot
+ggplot(catch_sum2, aes(x = Species.code, y = CPUE, fill = Species.code, group = Species.code)) +
+  geom_col() +
+  xlab("Fish species") +
+  ylab("CPUE") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water) +
+  theme_bw()
+
+ggplot(catch_sum2, aes(x = Species.code, y = CPUE, colour = Species.code, group = Species.code)) +
+  geom_point() +
+  xlab("Fish species") +
+  ylab("CPUE") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  facet_wrap(~Water)+
+  theme_bw()
+```
+
+**CPUE for all lakes**
+```{r CPUE all lakes}
+cpuedat <- read.csv("CRADL_catch_data_2019-WORKING.csv")
+cpuedat <- cpuedat[!cpuedat$FK_Survey_ID == 6 & !cpuedat$FK_Survey_ID == 18 & !cpuedat$FK_Survey_ID == 21 & !cpuedat$FK_Survey_ID == 23 & !cpuedat$FK_Survey_ID == 24 & !cpuedat$FK_Survey_ID == 29,]
+
+#adding lake names
+cpuedat$Water <- NA
+cpuedat$Water[cpuedat$FK_Survey_ID == "1"] <- "Brodill Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "2"] <- "Wavy Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "3"] <- "Great Mountain Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "4"] <- "Chief Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "5"] <- "White Oak Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "7"] <- "Davis Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "8"] <- "George Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "9"] <- "Johnnie Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "10"] <- "Wolf Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "11"] <- "Baby Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "12"] <- "Laundrie Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "13"] <- "Whitepine Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "14"] <- "Daisy Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "15"] <- "Peter Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "16"] <- "Bowland Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "17"] <- "Tyson Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "19"] <- "Kelly 27 Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "20"] <- "Clearwater Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "22"] <- "Nelson Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "25"] <- "Bell Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "26"] <- "Matagamasi Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "27"] <- "Marina Lk."
+cpuedat$Water[cpuedat$FK_Survey_ID == "28"] <- "Florence Lk."
+
+cpuedat <- cpuedat %>%
+  select(Water, everything())
+cpuedat$Species.code <- as.character(cpuedat$Species.code)
+
+#removing blank columns
+cpuedat <- cpuedat[-c(21:23)]
+
+#find max effort (number of nets set) per lake
+cpuedat$Effort <- as.numeric(cpuedat$Effort)
+toteff <- cpuedat %>% group_by(Water) %>% summarise(TotalEffort = max(Effort))
+bigcpue <- merge(cpuedat, toteff)
+
+#find total of each fish species caught per lake
+bigcpue$count <- 1
+
+spccatch <- bigcpue %>% group_by(Water, Species.code) %>%
+  summarise(TotalCatch = sum(count))
+
+catcheff <- merge(spccatch, toteff)
+
+#divide total # of each spc / total effort per lake
+catcheff$CPUE <- catcheff$TotalCatch/catcheff$TotalEffort
+
+#adding lake groups
+catcheff$StudyLake <- "NE BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Baby Lk."] <- "Study Lakes"
+catcheff$StudyLake[catcheff$Water == "Daisy Lk."] <- "Study Lakes"
+catcheff$StudyLake[catcheff$Water == "Nelson Lk."] <- "Study Lakes"
+catcheff$StudyLake[catcheff$Water == "Brodill Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Wavy Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Great Mountain Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Chief Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "White Oak Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "George Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Johnnie Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Peter Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Tyson Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Clearwater Lk."] <- "SW BsM Lakes"
+catcheff$StudyLake[catcheff$Water == "Bell Lk."] <- "SW BsM Lakes"
+
+#adding species names
+catcheff$TAXON <- NA
+catcheff$TAXON[catcheff$Species.code == 131] <- "Northern pike"
+catcheff$TAXON[catcheff$Species.code == 163] <- "White sucker"
+catcheff$TAXON[catcheff$Species.code == 198] <- "Common shiner"
+catcheff$TAXON[catcheff$Species.code == 212] <- "Creek chub"
+catcheff$TAXON[catcheff$Species.code == 313] <- "Pumpkinseed"
+catcheff$TAXON[catcheff$Species.code == 316] <- "Smallmouth bass"
+catcheff$TAXON[catcheff$Species.code == 331] <- "Yellow perch"
+catcheff$TAXON[catcheff$Species.code == 194] <- "Golden shiner"
+catcheff$TAXON[catcheff$Species.code == 311] <- "Rock bass"
+catcheff$TAXON[catcheff$Species.code == 342] <- "Logperch"
+catcheff$TAXON[catcheff$Species.code == 81] <- "Lake trout"
+catcheff$TAXON[catcheff$Species.code == 91] <- "Lake whitefish"
+catcheff$TAXON[catcheff$Species.code == 93] <- "Cisco"
+catcheff$TAXON[catcheff$Species.code == 214] <- "Pearl dace"
+catcheff$TAXON[catcheff$Species.code == 338] <- "Iowa darter"
+catcheff$TAXON[catcheff$Species.code == 233] <- "Brown bullhead"
+catcheff$TAXON[catcheff$Species.code == 334] <- "Walleye"
+catcheff$TAXON[catcheff$Species.code == 80] <- "Brook trout"
+catcheff$TAXON[catcheff$Species.code == 200] <- "Blacknose shiner"
+catcheff$TAXON[catcheff$Species.code == 208] <- "Bluntnose minnow"
+catcheff$TAXON[catcheff$Species.code == 317] <- "Largemouth bass"
+catcheff$TAXON[catcheff$Species.code == 182] <- "Northern redbelly dace"
+catcheff$TAXON[catcheff$Species.code == 185] <- "Lake chub"
+catcheff$TAXON[catcheff$Species.code == 210] <- "Eastern blacknose dace"
+catcheff$TAXON[catcheff$Species.code == 83] <- "Aurora trout"
+catcheff$TAXON[catcheff$Species.code == 271] <- "Burbot"
+
+#adding thermal guilds
+catcheff$thermguild <- NA
+catcheff$thermguild[catcheff$TAXON == "Northern pike"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "White sucker"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Smallmouth bass"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Walleye"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Common shiner"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Creek chub"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Pumpkinseed"] <- "Warm"
+catcheff$thermguild[catcheff$TAXON == "Yellow perch"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Brown bullhead"] <- "Warm"
+catcheff$thermguild[catcheff$TAXON == "Burbot"] <- "Cold"
+catcheff$thermguild[catcheff$TAXON == "Lake trout"] <- "Cold"
+catcheff$thermguild[catcheff$TAXON == "Lake whitefish"] <- "Cold"
+catcheff$thermguild[catcheff$TAXON == "Cisco"] <- "Cold"
+catcheff$thermguild[catcheff$TAXON == "Logperch"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Rock bass"] <- "Cool" 
+catcheff$thermguild[catcheff$TAXON == "Golden shiner"] <- "Cool"  
+catcheff$thermguild[catcheff$TAXON == "Pearl dace"] <- "Cool"
+catcheff$thermguild[catcheff$TAXON == "Iowa darter"] <- "Cool"  
+catcheff$thermguild[catcheff$TAXON == "Brook trout"] <- "Cold"  
+catcheff$thermguild[catcheff$TAXON == "Aurora trout"] <- "Cold"  
+catcheff$thermguild[catcheff$TAXON == "Blacknose shiner"] <- "Warm"  
+catcheff$thermguild[catcheff$TAXON == "Bluntnose minnow"] <- "Cool"  
+catcheff$thermguild[catcheff$TAXON == "Largemouth bass"] <- "Warm"  
+catcheff$thermguild[catcheff$TAXON == "Northern redbelly dace"] <- "Cool"  
+catcheff$thermguild[catcheff$TAXON == "Lake chub"] <- "Cold" 
+catcheff$thermguild[catcheff$TAXON == "Eastern blacknose dace"] <- "Cool"  
+
+#adding acid tolerance
+catcheff$acidtol <- "Acid-sensitive"
+catcheff$acidtol[catcheff$TAXON == "Northern pike"] <- "Acid-tolerant"
+catcheff$acidtol[catcheff$TAXON == "Walleye"] <- "Highly acid-sensitive"
+catcheff$acidtol[catcheff$TAXON == "Yellow perch"] <- "Acid-tolerant"
+catcheff$acidtol[catcheff$TAXON == "Brown bullhead"] <- "Acid-tolerant"
+catcheff$acidtol[catcheff$TAXON == "Burbot"] <- "Highly acid-sensitive"
+catcheff$acidtol[catcheff$TAXON == "Cisco"] <- "Acid-tolerant"
+catcheff$acidtol[catcheff$TAXON == "Logperch"] <- "Highly acid-sensitive"
+catcheff$acidtol[catcheff$TAXON == "Rock bass"] <- "Acid-tolerant" 
+catcheff$acidtol[catcheff$TAXON == "Blacknose shiner"] <- "Highly acid-sensitive"  
+catcheff$acidtol[catcheff$TAXON == "Bluntnose minnow"] <- "Highly acid-sensitive"  
+catcheff$acidtol[catcheff$TAXON == "Lake chub"] <- "Acid-tolerant" 
+catcheff$acidtol[catcheff$TAXON == "Eastern blacknose dace"] <- "Highly acid-sensitive"  
+
+#adding column for species richness
+catcheff$spc <- 1
+
+scalc <- catcheff %>% group_by(Water) %>%
+  summarise(S = sum(spc))
+
+catcheff <- catcheff[-c(10)]
+
+catcheff <- merge(catcheff, scalc)
+
+#setting order of lakes on x axis for plots
+catcheff$order <- NA
+catcheff$order[catcheff$Water == "Baby Lk."] <- 21
+catcheff$order[catcheff$Water == "Daisy Lk."] <- 22
+catcheff$order[catcheff$Water == "Nelson Lk."] <- 23
+catcheff$order[catcheff$Water == "Brodill Lk."] <- 1
+catcheff$order[catcheff$Water == "Wavy Lk."] <- 5
+catcheff$order[catcheff$Water == "Great Mountain Lk."] <- 10
+catcheff$order[catcheff$Water == "Chief Lk."] <- 2
+catcheff$order[catcheff$Water == "White Oak Lk."] <- 4
+catcheff$order[catcheff$Water == "George Lk."] <- 11
+catcheff$order[catcheff$Water == "Johnnie Lk."] <- 9
+catcheff$order[catcheff$Water == "Peter Lk."] <- 6
+catcheff$order[catcheff$Water == "Tyson Lk."] <- 7
+catcheff$order[catcheff$Water == "Clearwater Lk."] <- 3
+catcheff$order[catcheff$Water == "Bell Lk."] <- 8
+catcheff$order[catcheff$Water == "Matagamasi Lk."] <- 12
+catcheff$order[catcheff$Water == "Kelly 27 Lk."] <- 13
+catcheff$order[catcheff$Water == "Wolf Lk."] <- 14
+catcheff$order[catcheff$Water == "Davis Lk."] <- 15
+catcheff$order[catcheff$Water == "Bowland Lk."] <- 16
+catcheff$order[catcheff$Water == "Laundrie Lk."] <- 17
+catcheff$order[catcheff$Water == "Florence Lk."] <- 18
+catcheff$order[catcheff$Water == "Whitepine Lk."] <- 19
+catcheff$order[catcheff$Water == "Marina Lk."] <- 20
+catcheff$order <- as.numeric(catcheff$order)
+
+#plotting
+#colour for each spc
+library(randomcoloR)
+n <- 26
+palette <- distinctColorPalette(n)
+
+ggplot(catcheff, aes(x = reorder(Water, order), y = CPUE, group = Water, fill = TAXON)) +
+  geom_bar(position = "stack", stat = "identity") +
+  xlab("Lake") +
+  ylab("Catch per unit effort (CPUE) of each lake fish community") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  scale_fill_manual(values = palette) +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+#w/ abundance (catch) threshold
+#removing where only one of a species was caught
+adjcatcheff <- catcheff[!catcheff$TotalCatch <= 5,]
+
+ggplot(adjcatcheff, aes(x = reorder(Water, order), y = CPUE, group = Water, fill = TAXON)) +
+  geom_bar(position = "stack", stat = "identity") +
+  xlab("Lake") +
+  ylab("Catch per unit effort (CPUE) of each lake fish community") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  scale_fill_manual(values = palette) +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+#colour for sensitivity
+acidcatcheff <- catcheff[-c(8)]
+acidcatcheff$acidtol <- as.factor(acidcatcheff$acidtol)
+acidcatcheff$acidtol <- factor(acidcatcheff$acidtol, levels = c('Acid-tolerant','Acid-sensitive','Highly acid-sensitive'))
+
+ggplot(acidcatcheff, aes(x = reorder(Water, order), y = CPUE, group = acidtol, fill = factor(acidtol, levels = c('Acid-tolerant','Acid-sensitive','Highly acid-sensitive')))) +
+  geom_bar(position = "stack", stat = "identity") +
+  xlab("Lake") +
+  ylab("Catch per unit effort (CPUE) of each lake fish community") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  scale_fill_manual(labels = c("Acid-tolerant (pH <4.5)", "Acid-sensitive (pH 4.5-5.5)", "Highly acid-sensitive (pH >5.5)"), values = c("pink", "red", "dark red")) +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  labs(fill='Acid sensitivity') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+CPUE_taxon <- acidcatcheff %>% group_by(Water, TAXON) %>%
+  summarise(CPUE_tax = sum(CPUE))
+CPUE_taxon2 <- acidcatcheff %>% group_by(StudyLake, Water, TAXON) %>%
+  summarise(CPUE_tax2 = sum(CPUE))
+CPUE_taxon_group <- CPUE_taxon2 %>% group_by(StudyLake, TAXON) %>%
+  summarise(CPUE_taxG = mean(CPUE_tax2), sd = sd(CPUE_tax2))
+
+CPUE_acid <- acidcatcheff %>% group_by(Water, acidtol) %>%
+  summarise(CPUE_pH = sum(CPUE))
+CPUE_acid_2 <- acidcatcheff %>% group_by(StudyLake, Water, acidtol) %>%
+  summarise(CPUE_pH2 = sum(CPUE))
+CPUE_acid_group <- CPUE_acid_2 %>% group_by(StudyLake, acidtol) %>%
+  summarise(CPUE_pHG = mean(CPUE_pH2), sd = sd(CPUE_pH2))
+
+#colour for thermal guild
+thermcatcheff <- catcheff[-c(7)]
+thermcatcheff$thermguild <- as.factor(thermcatcheff$thermguild)
+thermcatcheff$thermguild <- factor(thermcatcheff$thermguild, levels = c('Warm', 'Cool', 'Cold'))
+
+ggplot(thermcatcheff, aes(x = reorder(Water, order), y = CPUE, group = thermguild, fill = factor(thermguild, levels = c('Warm', 'Cool', 'Cold')))) +
+  geom_bar(position = "stack", stat = "identity") +
+  xlab("Lake") +
+  ylab("Catch per unit effort (CPUE) of each lake fish community") +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  scale_fill_manual(values = c("light blue", "blue", "dark blue")) +
+  facet_wrap(~StudyLake, scales = "free_x") +
+  labs(fill='Thermal Guild') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45))
+
+CPUE_ftp <- thermcatcheff %>% group_by(Water, thermguild) %>%
+  summarise(CPUE_ftp = sum(CPUE))
+CPUE_ftp_2 <- thermcatcheff %>% group_by(StudyLake, Water, thermguild) %>%
+  summarise(CPUE_ftp2 = sum(CPUE))
+CPUE_ftp_group <- CPUE_ftp_2 %>% group_by(StudyLake, thermguild) %>%
+  summarise(CPUE_ftpG = mean(CPUE_ftp2), sd = sd(CPUE_ftp2))
+
+```
