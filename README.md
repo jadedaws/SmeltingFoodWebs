@@ -2,7 +2,7 @@
 
 <b> Stable isotope analysis provides novel insights for measuring lake ecosystem recovery following acidification</b> :factory: :fish: <br>
 
-<b> J.C. Dawson, B.A. Edwards, M.M. Guzzo, J.M. Gunn, E.J.S. Emilson, K.S. McCann </b>
+<b> J.C. Dawson, B.A. Edwards, M.M. Guzzo, J.M. Gunn, E.J.S. Emilson, and K.S. McCann </b>
 
 ## Abstract
 
