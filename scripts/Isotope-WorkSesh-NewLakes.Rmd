@@ -55,7 +55,7 @@ ggplot(subset(base_data, Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), a
   labs(title = "Study lakes baselines comparison", x = "d13C", y = "d15N")
 
 ##########################
-##  BsM LAKES BASELINES ##
+##  REF LAKES BASELINES ##
 ##########################
 ggplot(subset(base_data, Water %in% c("Tadenac Lk.", "Richardson Lk.")), aes(x = d13C, y = d15N,  colour = Water, shape = TAXON, group = TAXON)) +
   geom_point() +
@@ -112,10 +112,6 @@ ggplot(subset(base_data_rc, TAXON %in% c("CLAM", "ZOOP")), aes(x = d13C, y = d15
 
 
 ```
-#DELIBERATION
-
-##How best to do the mixed pelagic/littoral baselines?
-*Should I be averaging zoop/clam together for lakes that have both (same for mayfly/trichopt)? Should I be trying to stick to one and only sub in when necessary? Both?*
 
 ###Calculating the mean C and N values for the baselines
 ```{r Baseline mean C and Ns by TAXON within each lake}
@@ -131,9 +127,7 @@ ggplot(subset(base_data_sum, TAXON %in% c("CLAM","MAYFLY", "TRICHOPT", "ZOOP")),
   xlim(-35,-20) + ylim(0,5) +
   labs(title = "Baselines comparison w/ means +/- sd", x = "d13C", y = "d15N")
 
-
 ```
-
 
 ###Adding columns specific to each baseline and adding mean C and N for baselines (individual and hybrid/mixed)
 *Adding columns specific to each baseline organism*
@@ -321,7 +315,7 @@ ggplot(data_nl, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, gro
   labs(title = "Nelson Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
 
 ###############
-## BsM LAKES ##
+## REF LAKES ##
 ###############
 
 ####Richardson Lk####
@@ -414,7 +408,7 @@ ggplot(yp_smb, aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water
 data$prop_litt_EZ <- (data$d13C - data$d13C_zoop)/(data$d13C_eph - data$d13C_zoop)
 
 ###################
-##  STUDY + BsM  ##
+##  STUDY + REF  ##
 ###################
 #eph (L) ; zoop/clam - TADENAC (P)
 data$prop_litt_EZ <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
@@ -479,9 +473,7 @@ ggplot(data=plE_freq, aes(x=tag, y=freq))+
   geom_text(aes(label=pctlbls), vjust=-0.5)+
   theme_bw()
 
-
 ```
-
 
 #PLOTTING MEAN PROPORTION LITTORAL ENERGY USAGE#
 
@@ -1319,7 +1311,6 @@ ggplot(subset(sumCN, TAXON %in% c("SMB","YPERCH")), aes(x = mean.tlen, y = mean.
   scale_x_continuous() +
   facet_wrap(~Water)+
   theme(axis.text.x = element_text(angle = 45))
-
 
 
 #subsetting for C:N by spp.
