@@ -73,7 +73,7 @@ print(community.ML)
 ```
 
 ```{r defining Ellipses for overlap}
-# defining ellipses
+# defining ellipses. dy = Daisy Lake, bb = Baby Lake, nl = Nelson Lake, td = Tadenac Lake, rc = Richardson Lake; yp = yellow perch, smb = smallmouth bass.
 #dy smb
 ellipse1 <- "1.1" 
 #dy yp
@@ -98,13 +98,9 @@ ellipse10 <- "5.2"
 ```
 
 ```{r Ellipse overlap - max likelihood}
-# In this example, I will calculate the overlap between ellipses for groups 2
-# and 3 in community 1 (i.e. the green and yellow open circles of data).
-# The first ellipse is referenced using a character string representation where 
-# in "x.y", "x" is the community, and "y" is the group within that community.
-# So in this example: community 1, group 2
-#ellipse1 <- "1.2" 
-
+###################
+###   DAISY LK  ###
+###################
 # The overlap of the maximum likelihood fitted standard ellipses are estimated using
 dy.overlap <- maxLikOverlap(ellipse1, ellipse2, siber.obj, 
                              p.interval = NULL, n = 100)
@@ -160,11 +156,9 @@ td.prop.95.over <- td.ellipse95.overlap[3] / (td.ellipse95.overlap[2] +
                                           td.ellipse95.overlap[1] -
                                          td.ellipse95.overlap[3])
 
-
-
 ```
 
-```##{r test plots from github - these are all very ugly}
+```##{r test plots from github - these are all very ugly and not used in manuscript}
 # isoscapes
 first.plot <- ggplot(data = siberdat, 
                      aes(x = iso1, 
@@ -240,7 +234,6 @@ sumiso$rangeN <- NA
 sumiso$rangeN <- sumiso$max_d15N - sumiso$min_d15N
 
 #gives range of data, NOT of ellipses#
-
 
 ```
 
