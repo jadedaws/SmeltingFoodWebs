@@ -14,13 +14,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Importing Data}
 rm(list=ls())
 
-setwd("~/Desktop/Data/Working-Data")
+#setwd("~/Desktop/Data/Working-Data")
 library(naniar)
 library(dplyr)
 library(ggplot2)
+library(readr)
 
 ###dataset for CompleteIso with the BsM comparison lakes from Kev/Tom
-data <- read.csv("CompleteIsotopeswBsMCompLakes.csv")
+#data <- read.csv("CompleteIsotopeswBsMCompLakes.csv")
+data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
 
 ##removing Fairbank and Endikai Lks b/c incomplete baselines
 data <- data %>%
@@ -32,9 +34,6 @@ data <- data %>%
 **Richardson Lk. - littoral: snail, mayfly, trichopt.; pelagic: clam, zoop**
 **Tadenac Lk. - littoral: mayfly/ephemeri; pelagic: clam**
 **Baby/Daisy/Nelson Lks. - littoral: mayfly, peri; pelagic: zoop**
-
-####Uncommon baselines to be removed/not included?
-###IS THERE REASON TO KEEP THESE IN OTHER THAN FOR BASELINES? DO THEY HELP INFORM/FRAME THE BIG PICTURE OF LAKE ISOSCAPES?
 
 ```{r Comparing baseline isoscapes}
 ##Subsetting data for just baselines
