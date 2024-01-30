@@ -14,17 +14,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Importing Data}
 rm(list=ls())
 
-#setwd("~/Desktop/Data/Working-Data")
 library(naniar)
 library(dplyr)
 library(ggplot2)
 library(readr)
 
-###dataset for CompleteIso with the BsM comparison lakes from Kev/Tom
-#data <- read.csv("CompleteIsotopeswBsMCompLakes.csv")
+###Github connection to McCann & Johnson dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
 
-##removing Fairbank and Endikai Lks b/c incomplete baselines
+##Tidy data by removing Fairbank and Endikai Lks b/c incomplete baselines
 data <- data %>%
   filter(!grepl("Fairbank Lk.|Endikai Lk.", Water))
 
@@ -241,8 +239,6 @@ data_rc <- subset(data, data$Water == "Richardson Lk.")
 **Note that the fish species are represented by different colours across lakes because there are so many unique species across all the lakes**
 
 ```{r Isoscapes for all fish species by lake, echo=FALSE, warning=FALSE, message=FALSE}
-library(ggplot2)
-
 ##################################
 ########ISOSCAPES BY LAKE#########
 ##################################
@@ -481,7 +477,7 @@ ggplot(data=plE_freq, aes(x=tag, y=freq))+
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(prop_litt_EZ), sd.pl = sd(prop_litt_EZ), mean.adjpl = mean(adjprop_litt_EZ), sd.adjpl = sd(adjprop_litt_EZ))
 
-#binding ogether to create master data frame w/ all baseline C/Ns, mean proplittoral
+#binding together to create master data frame w/ all baseline C/Ns, mean prop. littoral
 bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
   
 
@@ -623,7 +619,7 @@ bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
   summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
 
-tpdat <- bigdat[c(1,2,26)]
+tpdat <- bigdat[c(1,2,26,27)]
 
 ###############
 ###  PLOTS  ###
@@ -776,15 +772,17 @@ ggplot(subset(data_sum_tp, TAXON %in% c("NPIKE", "PSEED")), aes(x = TAXON, y = m
 tpdat_SMBYP <- tpdat %>%
   filter(grepl("YPERCH|SMB", TAXON))
 
+stderror <- function(x) sd(x)/sqrt(length(x))
+
 tpdat_SMB <- tpdat_SMBYP %>%
   filter(grepl("SMB", TAXON))
 tpdat_SMB_sum <- tpdat_SMB %>% group_by(TAXON, Water) %>%
-  summarise(mean.tp2 = mean(tp_2, na.rm = T), sd.tp2 = sd(tp_2, na.rm = T), se.tp2 = std.error(tp_2, na.rm = T))
+  summarise(mean.tp2 = mean(tp_2, na.rm = T), sd.tp2 = sd(tp_2, na.rm = T), se.tp2 = stderror(tp_2))
 
 tpdat_YP <- tpdat_SMBYP %>%
   filter(grepl("YPERCH", TAXON))
 tpdat_YP_sum <- tpdat_YP %>% group_by(TAXON, Water) %>%
-  summarise(mean.tp2 = mean(tp_2, na.rm = T), sd.tp2 = sd(tp_2, na.rm = T), se.tp2 = std.error(tp_2, na.rm = T))
+  summarise(mean.tp2 = mean(tp_2, na.rm = T), sd.tp2 = sd(tp_2, na.rm = T), se.tp2 = stderror(tp_2))
 
 smb_tp_aov<-aov(tp_2 ~ Water, data = tpdat_SMB)
 summary(smb_tp_aov)
@@ -899,16 +897,15 @@ ggplot(sm_lakesize_tp, aes(x = TAXON, y = mean.tp.eph, colour = SIZE)) +
 
 #PREPPING SIZE DATA
 ```{r Import, tidy, stitch size data w C/N}
-list.files()
 
 #Filter for lakes of interest and remove baselines
-size_studyl <- read.csv("LCAR_SIA_Database.csv")
-size_td <- read.csv("Tom-ExtraLakes-Isotopes-2021Apr09.csv")
+size_studyl <- read_csv("../data/LCAR_SIA_Database.csv")
+size_td <- read_csv("../data/Tom-ExtraLakes-Isotopes-2021Apr09.csv")
 size_td <- size_td %>%
   filter(grepl("Tadenac", WBY)) %>%
   filter(!grepl("MAYFLY|CLAM|EPHEMERI", TAXON))
   
-size_rc <- read.csv("RichardsonL_SIA-data.csv")
+size_rc <- read_csv("../data/RichardsonL_SIA-data.csv")
 size_rc <- size_rc %>%
   filter(grepl("Richardson", Lake_Name)) %>%
   filter(!grepl("Baseline", Trophic_Level))
@@ -919,7 +916,7 @@ size_studyl<-size_studyl[-c(172:175),]
 
 size_td <- size_td[,c(1,9:11)]
 size_td <- size_td %>%
-  rename(SIASAM = SIA.SAM)
+  rename(SIASAM = `SIA SAM`)
 
 size_rc <- size_rc[,c(5,15,27:29)]
 size_rc <- size_rc %>%
@@ -936,12 +933,12 @@ test2 <- test2[,-c(4)]
 test2 <- test2 %>%
   rename(SIASAM = SIASAM.y)
 
-test2 <- test2[,c(26,2:7,1,8:25,27:29)]
+test2 <- test2[,c(27,2:7,1,8:26,28:30)]
 
 #stitching together to update 'bigdat'
 bigdat <- rbind(test,test2)
 
-bigdat[,27:29] <- sapply(bigdat[,27:29], as.numeric)
+bigdat[,28:30] <- sapply(bigdat[,28:30], as.numeric)
 
 ```
 
@@ -1145,7 +1142,7 @@ sumsizeTP <- bigdat %>%
   group_by(Water, TAXON) %>%
   summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.flen = mean(FLEN), sd.flen = sd(FLEN), mean.rwt = mean(RWT), sd.rwt = sd(RWT), mean.tlen = mean(TLEN), sd.tlen = sd(TLEN))
 
-subset <- bigdat[, c(2,3, 24:29)]
+subset <- bigdat[, c(2,3, 24:30)]
   
 sumsizeTP <- subset %>%
   filter(!is.na(RWT) & !is.na(TLEN) & !is.na(FLEN)) %>%
@@ -1356,7 +1353,7 @@ ggplot(subset(sumFI, TAXON %in% c("SMB","YPERCH")), aes(x = TAXON, y = mean.FI, 
 
 ```{r ANOVA sig. differences between lakes FI}
 #subsetting for FI by spp.
-data_FI <- bigdat[,c(1:3,30)]
+data_FI <- bigdat[,c(1:3,31)]
 data_FI_YP <- data_FI[data_FI$TAXON == "YPERCH",]
 data_FI_SMB <- data_FI[data_FI$TAXON == "SMB",]
 
