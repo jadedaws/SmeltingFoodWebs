@@ -12,10 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Importing Data}
 rm(list=ls())
 
-setwd("~/Desktop/Data/Working-Data")
 library(naniar)
 library(dplyr)
 library(ggplot2)
+library(readr)
 
 ```
 
@@ -27,8 +27,7 @@ library(magrittr)
 library(nicheROVER)
 library(viridis)
 
-
-siberdat <- read.csv("siberdat.csv")
+siberdat <- read_csv("../data/siberdat.csv")
 siberdat <- siberdat[-c(1)]
 #formatting community to integers
 siberdat$community[siberdat$community == "Daisy Lk."] <- 1
@@ -41,6 +40,7 @@ siberdat$community <- as.integer(siberdat$community)
 siberdat$group[siberdat$group == "SMB"] <- 1
 siberdat$group[siberdat$group == "YPERCH"] <- 2
 siberdat$group <- as.integer(siberdat$group)
+siberdat <- as.data.frame(siberdat)
 
 siber.obj <- createSiberObject(siberdat)
 
@@ -239,6 +239,7 @@ sumiso$rangeN <- sumiso$max_d15N - sumiso$min_d15N
 
 ```{r Bayesian}
 # Fit the Bayesian models
+library(rjags)
 
 # options for running jags
 parms <- list()

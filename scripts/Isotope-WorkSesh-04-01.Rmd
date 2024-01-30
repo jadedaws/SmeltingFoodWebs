@@ -14,13 +14,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Importing Data}
 rm(list=ls())
 
-setwd("~/Desktop/Data/Working-Data")
 library(naniar)
 library(dplyr)
 library(ggplot2)
+library(readr)
 
 ###dataset for CompleteIso with the BsM comparison lakes from Kev/Tom
-data <- read.csv("CompleteIsotopeswBsMCompLakes.csv")
+data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
 
 ##removing Fairbank and Endikai Lks b/c incomplete baselines
 data <- data %>%

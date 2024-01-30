@@ -17,12 +17,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r Importing data}
 rm(list=ls())
-setwd("~/Desktop/Data/Working-Data")
+
 library(naniar)
 library(dplyr)
 library(ggplot2)
+library(readr)
 
-catch_data <- read.csv("2019-CRADL_BB-DY-NL-WORKING.csv")
+catch_data <- read_csv("../data/2019-CRADL_BB-DY-NL-WORKING.csv")
 catch_data <- catch_data[!is.na(catch_data$FK_Survey_ID),]
 catch_data$Water <- NA
 catch_data$Water[catch_data$FK_Survey_ID == "11"] <- "Baby Lk."
@@ -30,11 +31,13 @@ catch_data$Water[catch_data$FK_Survey_ID == "14"] <- "Daisy Lk."
 catch_data$Water[catch_data$FK_Survey_ID == "22"] <- "Nelson Lk."
 catch_data <- catch_data %>%
   select(Water, everything())
+colnames(catch_data)[7] ="Species.code"
 catch_data$Species.code <- as.factor(catch_data$Species.code)
 catch_data$Effort <- as.factor(catch_data$Effort)
 
 #adding BsM lakes data
-bsm <- read.csv("CRADL_catch_data_2019-WORKING.csv")
+bsm <- read_csv("../data/CRADL_catch_data_2019-WORKING.csv")
+colnames(bsm)[6] ="Species.code"
 bsm <- bsm[bsm$Species.code == "316" | bsm$Species.code == "331",]
 bsm <- bsm[!bsm$FK_Survey_ID == 6 & !bsm$FK_Survey_ID == 11 & !bsm$FK_Survey_ID == 14 & !bsm$FK_Survey_ID == 18 & !bsm$FK_Survey_ID == 21 & !bsm$FK_Survey_ID == 22 & !bsm$FK_Survey_ID == 23 & !bsm$FK_Survey_ID == 24 & !bsm$FK_Survey_ID == 29,]
 
@@ -189,7 +192,7 @@ smb_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "316",]
 yp_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "331",]
 
 library(tidyr)
-library(drlib)
+#library(drlib)
 
 #smb
 ggplot(smb_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +
@@ -444,7 +447,7 @@ ggplot(catch_sum2, aes(x = Species.code, y = CPUE, colour = Species.code, group 
 
 **CPUE for all lakes**
 ```{r CPUE all lakes}
-cpuedat <- read.csv("CRADL_catch_data_2019-WORKING.csv")
+cpuedat <- read_csv("../data/CRADL_catch_data_2019-WORKING.csv")
 cpuedat <- cpuedat[!cpuedat$FK_Survey_ID == 6 & !cpuedat$FK_Survey_ID == 18 & !cpuedat$FK_Survey_ID == 21 & !cpuedat$FK_Survey_ID == 23 & !cpuedat$FK_Survey_ID == 24 & !cpuedat$FK_Survey_ID == 29,]
 
 #adding lake names
@@ -475,6 +478,7 @@ cpuedat$Water[cpuedat$FK_Survey_ID == "28"] <- "Florence Lk."
 
 cpuedat <- cpuedat %>%
   select(Water, everything())
+colnames(cpuedat)[7] ="Species.code"
 cpuedat$Species.code <- as.character(cpuedat$Species.code)
 
 #removing blank columns
