@@ -192,7 +192,6 @@ smb_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "316",]
 yp_FLENgroup <- groupFLEN_smbyp[groupFLEN_smbyp$Species.code == "331",]
 
 library(tidyr)
-#library(drlib)
 
 #smb
 ggplot(smb_FLENgroup, aes(x = reorder(Water, order), y = mean.body, group = Water)) +

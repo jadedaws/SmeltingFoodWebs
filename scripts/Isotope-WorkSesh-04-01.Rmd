@@ -35,14 +35,9 @@ data <- data %>%
 ####Using each baseline organism taken to see comparability w/ mayfly and zoop isotopes.
 *If not significantly different in same lake then could use as baseline for the lake(s) missing mayfly/zoop baselines*
 
-**Endikai Lk. - crayfish, snail, trichopt.** -> removed
-**Fairbank Lk. - mayfly** -> removed
 **Richardson Lk. - clam, snail, mayfly, trichopt., zoop**
 **Tadenac Lk. - clam, mayfly, ephemeri**
 **Baby/Daisy/Nelson Lks. - mayfly, zoop, peri**
-
-####Uncommon baselines to be removed/not included?
-###IS THERE REASON TO KEEP THESE IN OTHER THAN FOR BASELINES? DO THEY HELP INFORM/FRAME THE BIG PICTURE OF LAKE ISOSCAPES?
 
 ```{r Comparing baselines}
 ##Subsetting data for just baselines
@@ -111,18 +106,6 @@ ggplot(subset(base_data_td, TAXON %in% c("EPHEMERI", "MAYFLY")), aes(x = d13C, y
   labs(title = "Tadenac Lk. Mayfly-Ephemeri comparison", x = "d13C", y = "d15N")
 
 ```
-#DELIBERATION
-*TRICHOPT seems to be the best-fitting baseline to use in-lieu of mayflyies for Endikai, but is it similar enough to use?*
-
-*CLAM is the best-fitting baseline to use in-lieu of zoop for Tadenac (very close) but snail is not similar in d13C... could it be used for Endikai or is there a known substitute that's better? Can't compare crayfish and it has far too high 15N (5+)*
-
-*MAYFLY seems to differ from the cluster of EPHEMERI baselines in Tadenac, but is it different enough that it should not be included in the EMPHEMERI grouping?*
-*Mean Mayfly is (-23.42, 1.21) and Ephemeri is (-27.505,3.966667)*
-
-###WHAT BASELINE(S) SHOULD BE USED FOR CALCULATING PROP LITTORAL?
-**Mayfly/trichoptera for littoral?**
-**Would use zoop but 3/4 of the BsM lakes don't have it... Fairbank only has mayfly baselines unless a planktivorous fish could be used (N issues?)**
-
 
 ###Calculating the mean C and N values for the baselines
 ```{r Baseline mean C and Ns by TAXON within each lake}
