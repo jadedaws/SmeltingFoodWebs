@@ -22,18 +22,13 @@ library(readr)
 ###Github connection to McCann & Johnson dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
 
-##Tidy data by removing Fairbank and Endikai Lks b/c incomplete baselines
+###Removing Fairbank and Endikai Lks b/c incomplete baselines
 data <- data %>%
   filter(!grepl("Fairbank Lk.|Endikai Lk.", Water))
 
 ```
 
-#Baseline inventory
-**Richardson Lk. - littoral: snail, mayfly, trichopt.; pelagic: clam, zoop**
-**Tadenac Lk. - littoral: mayfly/ephemeri; pelagic: clam**
-**Baby/Daisy/Nelson Lks. - littoral: mayfly, peri; pelagic: zoop**
-
-```{r Comparing baseline isoscapes}
+```{r Comparing baseline isoscapes generally}
 ##Subsetting data for just baselines
 base_data <- data %>%
   filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|TRICHOPT|CLAM", TAXON))
@@ -80,12 +75,12 @@ ggplot(subset(base_data, TAXON %in% c("CLAM", "MAYFLY", "TRICHOPT", "ZOOP")), ae
 
 ```
 
-```{r Comparing baselines to use}
+```{r Comparing baselines to use: Richardson Lk example}
 ##Subsetting to use Richardson Lk (most isotopes)
 base_data_rc <- base_data %>%
   filter(grepl("Richardson Lk.", Water))
 
-##Using Richardson Lk. to see if trichoptera and mayfly; zoop and clam are comparable 
+##Using Richardson Lk. to see if trichoptera and mayfly / zoop and clam are comparable as this is the only lake with all 4 baselines collected. 
 
 ######################
 # TRICHOPT v. MAYFLY #
@@ -107,15 +102,13 @@ ggplot(subset(base_data_rc, TAXON %in% c("CLAM", "ZOOP")), aes(x = d13C, y = d15
   labs(title = "Richardson Lk. Zoop-Clam comparison", x = "d13C", y = "d15N")
 #coordinates: zoop (-32.22,2.24), clam (-30.80,2.02)
 
-
 ```
-
-###Calculating the mean C and N values for the baselines
-```{r Baseline mean C and Ns by TAXON within each lake}
+```{r Mean C and N by TAXON within each lake}
 base_data_sum <- base_data %>%
   group_by(Water, TAXON) %>%
   summarise(mean_d13C = mean(d13C), mean_d15N = mean(d15N), sd_d13C = sd(d13C), sd_d15N = sd(d15N))
 
+## Baseline mean C and N plot ##
 ggplot(subset(base_data_sum, TAXON %in% c("CLAM","MAYFLY", "TRICHOPT", "ZOOP")), aes(x = mean_d13C, y = mean_d15N,  colour = Water, shape = TAXON, group = TAXON)) +
   geom_point() +
   geom_errorbar(aes(ymax = mean_d15N + sd_d15N, ymin = mean_d15N - sd_d15N)) +
@@ -129,9 +122,8 @@ ggplot(subset(base_data_sum, TAXON %in% c("CLAM","MAYFLY", "TRICHOPT", "ZOOP")),
 ###Adding columns specific to each baseline and adding mean C and N for baselines (individual and hybrid/mixed)
 *Adding columns specific to each baseline organism*
 
-```{r Adding C + N columns for all the baselines}
-##add baselines as columns for C + N
-### ZOOP ### - MISSING TADENAC
+```{r Adding baseline mean C + N as columns}
+### ZOOP ### - Tadenac Lk does not have zoop baselines.*
 data$d13C_zoop<-NA
 data$d13C_zoop[data$Water == "Baby Lk."] <- -30.69
 data$d13C_zoop[data$Water == "Daisy Lk."] <- -32.93
@@ -173,26 +165,24 @@ data$d15N_zoopclam[data$Water == "Tadenac Lk."] <- 3.595
 
 ```
 
-##Just reformatting the data frame
-*Removing all baselines as rows, renaming, adding thermal guilds.*
 
 ```{r Reformatting the data frame}
-##remove baseline entries as rows + site column (only need for peri)
+##Remove baseline entries as rows + site column (only need for peri)
 data<-data[,-c(2)]
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|TRICHOPT|CRAYFISH|CLAM|SNAIL", TAXON))
 
-##removing the entries with NA for C/N
+##Removing entries with NA for C/N
 data <- data[!is.na(data$d13C),]
 
-##renaming some of the fish species to match each other
+##Renaming some of the fish species to match each other
 data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
 data$TAXON[data$TAXON == "NP"] <- "NPIKE"
 
-##adding size class (prey/pred) for few Richardson entries missing it
+##Adding size class (prey/pred) for few Richardson entries missing it
 data$SIZE[data$Water == "Richardson Lk." & is.na(data$SIZE)] <- "Pred"
 
-##adding in thermal guild information for all fish spc
+##Adding in thermal guild information for all fish species
 data$thermguild <- NA
 data$thermguild[data$TAXON == "NPIKE"] <- "Cool"
 data$thermguild[data$TAXON == "WS"] <- "Cool"
@@ -206,39 +196,32 @@ data$thermguild[data$TAXON == "BBULL"] <- "Warm"
 data$thermguild[data$TAXON == "BUR"] <- "Cold"
 data$thermguild[data$TAXON == "LT"] <- "Cold"
 data$thermguild[data$TAXON == "LWF"] <- "Cold"
-#data$thermguild[data$TAXON == "RT"] <- "Cold"
-#data$thermguild[data$TAXON == "SPSHINER"] <- "Cold"
 data$thermguild[data$TAXON == "CISCO"] <- "Cold"
 data$thermguild[data$TAXON == "RSMELT"] <- "Cold"  
 data$thermguild[data$TAXON == "BNMIN"] <-  "Cool"
-#data$thermguild[data$TAXON == "LPERCH"] <- "Cool"
 data$thermguild[data$TAXON == "RBASS"] <- "Cool" 
 data$thermguild[data$TAXON == "SLSCULP"] <- "Cold"
-#data$thermguild[data$TAXON == "DWSCULP"] <- "Cold"
-#data$thermguild[data$TAXON == "SPSCULP"] <- "Cold"
 data$thermguild[data$TAXON == "ALEWIFE"] <- "Cold"
 data$thermguild[data$TAXON == "GOSHINER"] <- "Cool"  
 data$thermguild[data$TAXON == "NSSTICK"] <- "Cold"
 
-##adding column for isoscape/biplot colouration
+##Adding column for isoscape/biplot colouration
 data$colour <- "All other species"
 data$colour[data$TAXON == "SMB"] <- "SMB"
 data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
   
-##subsetting data by lake bc facet got fucked
+##Subsetting data by lake (facet issues)
 data_bb <- subset(data, data$Water == "Baby Lk.")
 data_dy <- subset(data, data$Water == "Daisy Lk.")
 data_nl <- subset(data, data$Water == "Nelson Lk.")
 data_td <- subset(data, data$Water == "Tadenac Lk.")
 data_rc <- subset(data, data$Water == "Richardson Lk.")
   
-  
 ```
 
-##Plotting the Fish Isoscapes in each lake with 40% CI species ellipses and showing thermal guilds. 
-**Note that the fish species are represented by different colours across lakes because there are so many unique species across all the lakes**
+##Plotting the Fish Isoscapes in each lake with 40% CI species ellipses.
 
-```{r Isoscapes for all fish species by lake, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Isoscape plots, echo=FALSE, warning=FALSE, message=FALSE}
 ##################################
 ########ISOSCAPES BY LAKE#########
 ##################################
@@ -249,103 +232,22 @@ ggplot(data, aes(x = d13C, y = d15N,  colour = TAXON, group = interaction(Water,
   theme_classic(base_size = 14) +
   facet_wrap(~Water)
 
-#adding colour for SMB and YP only and symbols for taxon
-test<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, group = interaction(Water, TAXON))) +
+#CJFAS plot - Figure 3
+##adding colour for SMB + YP only and symbols for taxon
+CJFAS_CN<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, group = interaction(Water, TAXON))) +
   geom_point() +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
   facet_wrap(~Water)
 
-test + 
+CJFAS_CN + 
   scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
   scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
 
-#################
-## STUDY LAKES ##
-#################
-
-###Baby Lake###
-ggplot(data_bb, aes(x = d13C, y = d15N,  colour = TAXON, shape = SIZE, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Baby Lake Fish Isotope w/ Species Ellipses", x = "d13C", y = "d15N")
-
-ggplot(data_bb, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Baby Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
-
-###Daisy Lake###
-ggplot(data_dy, aes(x = d13C, y = d15N,  colour = TAXON, shape = SIZE, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Daisy Lake Fish Isotope w/ Species Ellipses", x = "d13C", y = "d15N")
-
-ggplot(data_dy, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Daisy Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
-
-###Nelson Lake###
-ggplot(data_nl, aes(x = d13C, y = d15N,  colour = TAXON, shape = SIZE, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Nelson Lake Fish Isotope w/ Species Ellipses", x = "d13C", y = "d15N")
-
-ggplot(data_nl, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Nelson Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
-
-###############
-## REF LAKES ##
-###############
-
-####Richardson Lk####
-ggplot(data_rc, aes(x = d13C, y = d15N,  colour = TAXON, shape = SIZE, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Richardson Lake Fish Isotope w/ Species Ellipses", x = "d13C", y = "d15N")
-
-ggplot(data_rc, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Richardson Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
-
-####Tadenac Lk####
-ggplot(data_td, aes(x = d13C, y = d15N,  colour = TAXON, shape = SIZE, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Tadenac Lake Fish Isotope w/ Species Ellipses", x = "d13C", y = "d15N")
-
-ggplot(data_td, aes(x = d13C, y = d15N,  colour = TAXON, shape = thermguild, group = TAXON)) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Tadenac Lake Fish Isotope w/ Species Ellipses (thermal)", x = "d13C", y = "d15N")
 
 ```
 
-```{r Fish isoscapes for common species across lakes}
+```{r Test plots: Fish isoscapes for common species across lakes}
 #########################
 # SMB + YPERCH ELLIPSES #
 #########################
@@ -392,9 +294,7 @@ ggplot(yp_smb, aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water
 
 ```
 
-#PROPORTION LITTORAL ENERGY USAGE CALCULATIONS#
-
-```{r Calculating proportion littoral energy usage w/ various baseline combos, echo=FALSE}
+```{r Calculating proportion littoral energy usage, echo=FALSE}
 
 ###################
 ##  STUDY LAKES  ##
@@ -409,6 +309,7 @@ data$prop_litt_EZ <- (data$d13C - data$d13C_zoop)/(data$d13C_eph - data$d13C_zoo
 data$prop_litt_EZ <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
 data<- data[!is.na(data$prop_litt_EZ),]
 hist(data$prop_litt_EZ)
+
 #adjusted (<0 and 100<)
 data$adjprop_litt_EZ <- NA
 data$adjprop_litt_EZ = data$prop_litt_EZ
@@ -418,55 +319,18 @@ hist(data$adjprop_litt_EZ)
 
 ```
 
-```{r Proportion Littoral histograms to find best fit}
-#BINNING#
-pl_breaks <- c(-1.5, 0, 0.25, 0.5, 0.75, 1.0, 2.5)
-# specify interval/bin labels
+```{r Trophic Position calculation, echo=FALSE}
+##trophic position
 
-#####################
-###  MAYFLY/ZOOP  ###
-#####################
-plE_tags <- c("[-1.5-0)","[0-0.25)", "[0.26-0.50)", "[0.51-0.75)", "[0.76-1.0)", "[1.01-2.50)")
-plE_group_tags <- cut(data$prop_litt_EZ, 
-                  breaks=pl_breaks, 
-                  include.lowest=TRUE, 
-                  right=FALSE, 
-                  labels=plE_tags)
-u <- data %>% select(prop_litt_EZ, TAXON) #pick the variable 
-plE_bin <- as_tibble(u) %>% 
-  mutate(tag = case_when(
-    prop_litt_EZ < 0 ~ plE_tags[1],
-    prop_litt_EZ >= 0 & prop_litt_EZ < 0.25 ~ plE_tags[2],
-    prop_litt_EZ >= 0.25 & prop_litt_EZ < 0.5 ~ plE_tags[3],
-    prop_litt_EZ >= 0.5 & prop_litt_EZ < 0.75 ~ plE_tags[4],
-    prop_litt_EZ >= 0.75 & prop_litt_EZ <= 1.0 ~ plE_tags[5],
-    prop_litt_EZ > 1.0 & prop_litt_EZ < 2.5 ~ plE_tags[6]
-    ))
-summary(plE_bin)
-plE_bin$tag <- factor(plE_bin$tag,
-                       levels = plE_tags,
-                       ordered = FALSE)
-summary(plE_bin$tag)
-##Frequencies based on bins
-plE_freq<- plyr::count(plE_bin, "tag")
-# Counts the number of observations according to FLEN
-plE_freq$freqlbls <- as.character(plE_freq$freq)
-# Calculating percent in each size class
-plE_freq$pct <- round(plE_freq$freq/sum(plE_freq$freq)*100)
-plE_freq$pctlbls <- as.character(plE_freq$pct)
-# Adding % to the labels
-plE_freq$pctlbls <- paste(plE_freq$pctlbls,"%",sep="")
+### TWO BASELINE TP CALCULATION ###
+# two baseline
+bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_EZ)) + (bigdat$d15N_eph*bigdat$prop_litt_EZ)))/3.4)
 
-##mayfly histogram w/ percent labels
-ggplot(data=plE_freq, aes(x=tag, y=freq))+
-  geom_bar(stat="identity",width=1, colour = "black")+
-  xlab("Proportion Littoral Energy")+
-  ylab("Frequency")+
-  ggtitle("Distribution of Proportion of Littoral Energy (mayfly-zoop)")+
-  scale_y_continuous()+
-  scale_x_discrete()+
-  geom_text(aes(label=pctlbls), vjust=-0.5)+
-  theme_bw()
+#summarize data for plots
+data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
+  summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
+
+#tpdat <- bigdat[c(1,2,26,27)]
 
 ```
 
@@ -477,36 +341,12 @@ ggplot(data=plE_freq, aes(x=tag, y=freq))+
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(prop_litt_EZ), sd.pl = sd(prop_litt_EZ), mean.adjpl = mean(adjprop_litt_EZ), sd.adjpl = sd(adjprop_litt_EZ))
 
-#binding together to create master data frame w/ all baseline C/Ns, mean prop. littoral
+#create master data frame w/ all baseline C/Ns, mean prop littoral
 bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
   
-
 ##############
 ###  PLOT  ###
 ##############
-
-#################################
-### EPH/TRI + ZOOP/CLAM/SNAIL ###
-#################################
-##BOXPLOTS
-ggplot(bigdat, aes(x = TAXON, y = prop_litt_EZ, fill = TAXON, group = TAXON)) +
-  geom_boxplot() +
-  xlab("Fish species") +
-  ylab("Prop. litt. energy using EPH (L) and ZOOP (P) (unadjusted)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-#adj
-ggplot(bigdat, aes(x = TAXON, y = adjprop_litt_EZ, fill = TAXON, group = TAXON)) +
-  geom_boxplot() +
-  xlab("Fish species") +
-  ylab("Prop. litt. energy using EPH (L) and Z (P) (adjusted)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
 
 smbyplab <- c("Smallmouth bass", "Yellow perch")
 
@@ -523,16 +363,6 @@ unadjpl <- ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, 
   theme_bw()
 
 plot(unadjpl)
-
-ggplot(bigdat, aes(x = TAXON, y = mean.pl, colour = thermguild, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl)) +
-  xlab("Fish species") +
-  ylab("Mean prop. litt. energy +/- sd (E - Z) w/ colour by thermal guild") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
 
 #adj
 adjpl <- 
@@ -554,63 +384,83 @@ adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x =
 library(cowplot)
 plot_grid(unadjpl, adjpl, labels = "AUTO")
 
-ggplot(bigdat, aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl)) +
-  xlab("Fish species") +
-  ylab("Mean adj-prop. litt. energy +/- sd (E - Z)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45))
 
-ggplot(bigdat, aes(x = TAXON, y = mean.adjpl, colour = thermguild, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl)) +
-  xlab("Fish species") +
-  ylab("Mean adj-prop. litt. energy +/- sd (E - Z) w/ colour by thermal guild") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
 ```
 
-```{r ANOVA proportion littoral}
-##SMB adj prop littoral data
-adjPL_SMB_YP<- bigdat[c(1,2,20)] %>%
-  filter(grepl("YPERCH|SMB", TAXON))
+```{r ANOVA/ANCOVA proportion littoral and TP}
+library(emmeans)
 
+##SMB adj prop littoral data
+bigdat$TAXON <- as.factor(bigdat$TAXON)
 smb_adjPL <- adjPL_SMB_YP %>%
   filter(grepl("SMB", TAXON))
-###anova
-smb_pl_aov<-aov(adjprop_litt_EZ ~ Water, data = smb_adjPL)
-summary(smb_pl_aov)
+
+###ANOVA
+smb_pl_aov<-lm(adjprop_litt_EZ ~ Water, data = smb_adjPL)
+anova(smb_pl_aov)
+###contrasts
+TukeyHSD(smb_pl_aov, which = "Water")
 
 ##YP adj prop littoral data
 yp_adjPL <- adjPL_SMB_YP %>%
   filter(grepl("YP", TAXON))
 
-###anova
-yp_pl_aov<-aov(adjprop_litt_EZ ~ Water, data = yp_adjPL)
-summary(yp_pl_aov)
+###ANOVA
+yp_pl_aov<-lm(adjprop_litt_EZ ~ Water, data = yp_adjPL)
+anova(yp_pl_aov)
+
+#Do we do Tukeys here? No? Should we do Tukeys anywhere?
+###contrasts
+#TukeyHSD(yp_pl_aov, which = "Water")
+
+###ANCOVA
+YP_PLFLEN<-emmeans(yp_pl_aov, pairwise ~ Water, adjust = "none")
+YP_PLFLEN
+
+x<-as.data.frame(summary(YP_PLFLEN)$emmeans)
+
+#plot for PL adj with body size correction
+ggplot(x, aes(x=Water, y=emmean))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+  geom_point()
+
+##TP + size correction
+##SMB
+smbTP <- bigdat %>%
+  filter(grepl("SMB", TAXON))
+
+smb_tp_aov<-lm(tp_2 ~ Water + FLEN, data = smbTP)
+anova(smb_tp_aov)
+
+#YP
+ypTP <- bigdat %>%
+  filter(grepl("YPERCH", TAXON))
+yp_tp_aov<-lm(tp_2 ~ Water + FLEN, data = ypTP)
+anova(yp_tp_aov)
+
 ```
+###OLD prop littoral range info... is this needed?
+> range(data$prop_littoral)
+[1] -0.815508  1.743316
+> mean(data$prop_littoral)
+[1] 0.8562738
+> median(data$prop_littoral)
+[1] 0.9117647
 
-
-#TROPHIC POSITION CALCULATIONS AND BIG PLOTS#
-*Using individual baselines (zoop, eph) and mixed*
+> range(data$prop_littoral2)
+[1] -1.168582  2.498084
+> mean(data$prop_littoral2)
+[1] 0.8460624
+> median(data$prop_littoral2)
+[1] 0.7676056
 
 ```{r Matt code - TP, echo=FALSE}
 ##trophic position
 ### CALC USING ZOOP (+ CLAM FOR TADENAC) ###
 bigdat$tp_ZC <- 2 + ((bigdat$d15N - bigdat$d15N_zoopclam)/3.4)
-           
-### CALC USING ZOOP + CLAM (FOR TADENAC ONLY CLAM + AVG FOR RICHARDSON ###
 
-### CALC USING EPH ONLY ###
+### CALC USING EPH ###
 bigdat$tp_EPH <- 2 + ((bigdat$d15N - bigdat$d15N_eph)/3.4)
-
-### CALC USING EPH/TRI ###          
 
 # two baseline
 bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_EZ)) + (bigdat$d15N_eph*bigdat$prop_litt_EZ)))/3.4)
@@ -621,6 +471,11 @@ data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
 
 tpdat <- bigdat[c(1,2,26,27)]
 
+###AOV for length
+
+```
+
+```{r plots}
 ###############
 ###  PLOTS  ###
 ###############
@@ -681,6 +536,21 @@ ggplot(data_sum_tp, aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON))
   theme(axis.text.x = element_text(angle = 45))
 
 ```
+
+###OLD TP range info... is this needed?
+> range(data$tp_ZCS)
+[1] 2.270588 5.223529
+> mean(data$tp_ZCS)
+[1] 3.571591
+> median(data$tp_ZCS)
+[1] 3.523529
+
+> range(data$tp_EPHTRI)
+[1] 1.950000 5.45
+> mean(data$tp_EPHTRI)
+[1] 3.682063
+> median(data$tp_EPHTRI)
+[1] 3.722581
 
 #PLOTTING TROPHIC POSITION FOR COMMON FISH SPECIES#
 
@@ -784,7 +654,7 @@ tpdat_YP <- tpdat_SMBYP %>%
 tpdat_YP_sum <- tpdat_YP %>% group_by(TAXON, Water) %>%
   summarise(mean.tp2 = mean(tp_2, na.rm = T), sd.tp2 = sd(tp_2, na.rm = T), se.tp2 = stderror(tp_2))
 
-smb_tp_aov<-aov(tp_2 ~ Water, data = tpdat_SMB)
+smb_tp_aov<-aov(tp_2 ~ Water*FLEN, data = tpdat_SMB)
 summary(smb_tp_aov)
 TukeyHSD(smb_tp_aov, which = "Water")
 
@@ -941,8 +811,6 @@ bigdat <- rbind(test,test2)
 bigdat[,28:30] <- sapply(bigdat[,28:30], as.numeric)
 
 ```
-
-
 
 #TROPHIC POSITION OF COMMON SPECIES W/ BODY SIZE#
 
@@ -1248,9 +1116,12 @@ ggplot(commonsumsizeTP, aes(x = RWT_mean, y = tp_ZC_mean, colour = Water)) +
 ```
 
 
-###CALCULATING AVERAGE C:N (CONDITION) FOR YPERCH AND SMB ACROSS LAKES###
 
-```{r C:N RATIO}
+
+
+
+
+```{r C:N Ratio (Condition) for YP and SMB}
 
 ##SUBSETTING DATA/MAKING DF
 sumCN <- bigdat %>%
@@ -1324,7 +1195,6 @@ summary(smb_cn_aov)
 
 TukeyHSD(smb_cn_aov, which = "Water")
 ```
-
 
 ```{r Condition - Fulton's index}
 #add FI to masterdata frame

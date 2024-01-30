@@ -27,8 +27,18 @@ library(magrittr)
 library(nicheROVER)
 library(viridis)
 
-siberdat <- read_csv("../data/siberdat.csv")
-siberdat <- siberdat[-c(1)]
+#siberdat <- read_csv("../data/siberdat.csv")
+#siberdat <- siberdat[-c(1)]
+siberdat <- data.frame(
+  iso1 = bigdat$adjprop_litt_EZ,
+  iso2 = bigdat$tp_2,
+  group = bigdat$TAXON,
+  community = bigdat$Water
+  )
+
+siberdat <- siberdat %>%
+  filter(group %in% c("SMB", "YPERCH"))
+
 #formatting community to integers
 siberdat$community[siberdat$community == "Daisy Lk."] <- 1
 siberdat$community[siberdat$community == "Baby Lk."] <- 2
@@ -158,67 +168,16 @@ td.prop.95.over <- td.ellipse95.overlap[3] / (td.ellipse95.overlap[2] +
 
 ```
 
-```##{r test plots from github - these are all very ugly and not used in manuscript}
-# isoscapes
-first.plot <- ggplot(data = siberdat, 
-                     aes(x = iso1, 
-                         y = iso2)) + 
-  geom_point(aes(color = community, shape = group), size = 5) +
-  ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
-  xlab(expression(paste(delta^{13}, "C (\u2030)"))) + 
-  theme(text = element_text(size=16)) + 
-  scale_color_viridis_d() +
-  theme_classic()
+```{r test plotst}
+siberdat$community <- as.factor(siberdat$community)
+siberdat$group <- as.factor(siberdat$group)
 
-print(first.plot)
-
-# classic scatterplot #
-
-# Summarise By Group (sbg)
-sbg <- siberdat %>% 
-  group_by(group, community) %>% 
-  summarise(count = n(),
-            mC = mean(iso1), 
-            sdC = sd(iso1), 
-            mN = mean(iso2), 
-            sdN = sd(iso2))
-
-second.plot <- first.plot
-
-second.plot <- first.plot +
-  geom_errorbar(data = sbg,
-                mapping = aes(x = mC, y = mN,
-                              ymin = mN - 1.96*sdN,
-                              ymax = mN + 1.96*sdN),
-                width = 0) +
-  geom_errorbarh(data = sbg,
-                 mapping = aes(x = mC, y = mN,
-                               xmin = mC - 1.96*sdC,
-                               xmax = mC + 1.96*sdC),
-                 height = 0) +
-  geom_point(data = sbg, aes(x = mC, 
-                             y = mN,
-                             fill = group),
-             color = "black", shape = 22, size = 5,
-             alpha = 0.7, show.legend = F) +
-  scale_fill_viridis_d()
-
-print(second.plot)
-
-# ellipse plot #
-p.ell <- 0.95
-
-ellipse.plot <- first.plot +
-  stat_ellipse(aes(group = interaction(group, community),
-                   fill = group,
-                   color = group),
-               alpha = 0.25,
-               level = p.ell,
-               type = "norm",
-               geom = "polygon") +
-  scale_fill_viridis_d()
-
-print(ellipse.plot)
+ggplot(siberdat, aes(x = iso1, y = iso2, colour = group)) +
+  geom_point() +
+  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
+  theme_classic(base_size = 14) +
+  facet_wrap(~community) +
+  labs(title = "40% Ellipse")
 
 ```
 
