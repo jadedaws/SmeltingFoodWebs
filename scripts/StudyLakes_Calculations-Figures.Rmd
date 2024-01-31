@@ -22,13 +22,13 @@ library(readr)
 ###Github connection to McCann & Johnson dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
 
-###Removing Fairbank and Endikai Lks b/c incomplete baselines
+###Removing lakes w/ incomplete baselines (Fairbank, Endikai)
 data <- data %>%
   filter(!grepl("Fairbank Lk.|Endikai Lk.", Water))
 
 ```
 
-```{r Comparing baseline isoscapes generally}
+```{r Cleaning baseline data}
 ##Subsetting data for just baselines
 base_data <- data %>%
   filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|TRICHOPT|CLAM", TAXON))
@@ -36,73 +36,8 @@ base_data <- data %>%
 base_data$TAXON[base_data$TAXON == "EPH"] <- "MAYFLY"
 base_data$TAXON[base_data$TAXON == "EPHEMERI"] <- "MAYFLY"
 
-##########################
-## STUDY LAKES BASELINES##
-##########################
-ggplot(subset(base_data, Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x = d13C, y = d15N,  colour = Water, shape = TAXON, group = TAXON)) +
-  geom_point() +
-  scale_shape_manual(values = c(15,16,1)) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-15) + ylim(0,6) +
-  labs(title = "Study lakes baselines comparison", x = "d13C", y = "d15N")
-
-##########################
-##  REF LAKES BASELINES ##
-##########################
-ggplot(subset(base_data, Water %in% c("Tadenac Lk.", "Richardson Lk.")), aes(x = d13C, y = d15N,  colour = Water, shape = TAXON, group = TAXON)) +
-  geom_point() +
-  scale_shape_manual(values = c(0,15:17,1)) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-15) + ylim(0,6) +
-  labs(title = "BsM lakes baselines comparison", x = "d13C", y = "d15N")
-
-##########################
-##  ALL LAKES BASELINES ##
-##########################
-ggplot(base_data, aes(x = d13C, y = d15N,  colour = Water, shape = TAXON, group = TAXON)) +
-  geom_point() +
-  scale_shape_manual(values = c(0,15:18,1)) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-15) + ylim(0,6) +
-  labs(title = "All lakes baselines comparison - (Littoral fill)", x = "d13C", y = "d15N")
-
-ggplot(subset(base_data, TAXON %in% c("CLAM", "MAYFLY", "TRICHOPT", "ZOOP")), aes(x = d13C, y = d15N,  colour = Water, shape = TAXON, group = TAXON)) +
-  geom_point() +
-  scale_shape_manual(values = c(0,15,18,1)) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-20) + ylim(0,5) +
-  labs(title = "Usable baselines comparison - (Littoral fill)", x = "d13C", y = "d15N")
-
 ```
 
-```{r Comparing baselines to use: Richardson Lk example}
-##Subsetting to use Richardson Lk (most isotopes)
-base_data_rc <- base_data %>%
-  filter(grepl("Richardson Lk.", Water))
-
-##Using Richardson Lk. to see if trichoptera and mayfly / zoop and clam are comparable as this is the only lake with all 4 baselines collected. 
-
-######################
-# TRICHOPT v. MAYFLY #
-######################
-ggplot(subset(base_data_rc, TAXON %in% c("TRICHOPT", "MAYFLY")), aes(x = d13C, y = d15N,  colour = TAXON, group = TAXON)) +
-  geom_point() +
-  theme_classic(base_size = 14) +
-  xlim(-30,-15) + ylim(0,6) +
-  labs(title = "Richardson Lk. Mayfly-Trichopt comparison", x = "d13C", y = "d15N")
-#coordinates: mayfly (-25.21,3.25), trichopt(-24.31,1.06 and -21.48,0.77)
-
-######################
-##   CLAM v. ZOOP   ##
-######################
-ggplot(subset(base_data_rc, TAXON %in% c("CLAM", "ZOOP")), aes(x = d13C, y = d15N,  colour = TAXON, group = TAXON)) +
-  geom_point() +
-  theme_classic(base_size = 14) +
-  xlim(-33,-15) + ylim(0,6) +
-  labs(title = "Richardson Lk. Zoop-Clam comparison", x = "d13C", y = "d15N")
-#coordinates: zoop (-32.22,2.24), clam (-30.80,2.02)
-
-```
 ```{r Mean C and N by TAXON within each lake}
 base_data_sum <- base_data %>%
   group_by(Water, TAXON) %>%
@@ -117,10 +52,8 @@ ggplot(subset(base_data_sum, TAXON %in% c("CLAM","MAYFLY", "TRICHOPT", "ZOOP")),
   xlim(-35,-20) + ylim(0,5) +
   labs(title = "Baselines comparison w/ means +/- sd", x = "d13C", y = "d15N")
 
+rm(base_data, base_data_sum)
 ```
-
-###Adding columns specific to each baseline and adding mean C and N for baselines (individual and hybrid/mixed)
-*Adding columns specific to each baseline organism*
 
 ```{r Adding baseline mean C + N as columns}
 ### ZOOP ### - Tadenac Lk does not have zoop baselines.*
@@ -167,8 +100,8 @@ data$d15N_zoopclam[data$Water == "Tadenac Lk."] <- 3.595
 
 
 ```{r Reformatting the data frame}
-##Remove baseline entries as rows + site column (only need for peri)
-data<-data[,-c(2)]
+##Remove baseline entries as rows + site column
+data<-data[,-c(2,8,14,15)]
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|TRICHOPT|CRAYFISH|CLAM|SNAIL", TAXON))
 
@@ -178,32 +111,6 @@ data <- data[!is.na(data$d13C),]
 ##Renaming some of the fish species to match each other
 data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
 data$TAXON[data$TAXON == "NP"] <- "NPIKE"
-
-##Adding size class (prey/pred) for few Richardson entries missing it
-data$SIZE[data$Water == "Richardson Lk." & is.na(data$SIZE)] <- "Pred"
-
-##Adding in thermal guild information for all fish species
-data$thermguild <- NA
-data$thermguild[data$TAXON == "NPIKE"] <- "Cool"
-data$thermguild[data$TAXON == "WS"] <- "Cool"
-data$thermguild[data$TAXON == "SMB"] <- "Cool"
-data$thermguild[data$TAXON == "WALL"] <- "Cool"
-data$thermguild[data$TAXON == "COSHINER"] <- "Cool"
-data$thermguild[data$TAXON == "CCHUB"] <- "Cool"
-data$thermguild[data$TAXON == "PSEED"] <- "Warm"
-data$thermguild[data$TAXON == "YPERCH"] <- "Cool"
-data$thermguild[data$TAXON == "BBULL"] <- "Warm"
-data$thermguild[data$TAXON == "BUR"] <- "Cold"
-data$thermguild[data$TAXON == "LT"] <- "Cold"
-data$thermguild[data$TAXON == "LWF"] <- "Cold"
-data$thermguild[data$TAXON == "CISCO"] <- "Cold"
-data$thermguild[data$TAXON == "RSMELT"] <- "Cold"  
-data$thermguild[data$TAXON == "BNMIN"] <-  "Cool"
-data$thermguild[data$TAXON == "RBASS"] <- "Cool" 
-data$thermguild[data$TAXON == "SLSCULP"] <- "Cold"
-data$thermguild[data$TAXON == "ALEWIFE"] <- "Cold"
-data$thermguild[data$TAXON == "GOSHINER"] <- "Cool"  
-data$thermguild[data$TAXON == "NSSTICK"] <- "Cold"
 
 ##Adding column for isoscape/biplot colouration
 data$colour <- "All other species"
@@ -219,7 +126,6 @@ data_rc <- subset(data, data$Water == "Richardson Lk.")
   
 ```
 
-##Plotting the Fish Isoscapes in each lake with 40% CI species ellipses.
 
 ```{r Isoscape plots, echo=FALSE, warning=FALSE, message=FALSE}
 ##################################
@@ -247,20 +153,9 @@ CJFAS_CN +
 
 ```
 
-```{r Test plots: Fish isoscapes for common species across lakes}
-#########################
-# SMB + YPERCH ELLIPSES #
-#########################
+```{r Test plots: SMB + YP isoscapes w/ 40% ellipse across lakes}
 
-##all together
-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colour = Water, shape = TAXON, group = interaction(Water,TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-18) + ylim(3,14) +
-  labs(title = "Common fish isotopes across lakes", x = "d13C", y = "d15N")
-
-##facetted
+##facetted 40% ellipse
 ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water,TAXON))) +
   geom_point() +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
@@ -268,65 +163,32 @@ ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colo
   facet_wrap(~Water) +
   labs(title = "40% Ellipse")
 
-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water,TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.95, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water) +
-  labs(title = "95% Ellipse")
-
-################
-# W/ BASELINES #
-################
-yp_smb <- data %>%
-  filter(grepl("YPERCH|SMB", TAXON))
-bd <- base_data %>%
-  filter(grepl("MAYFLY|TRICHOPT|ZOOP|CLAM", TAXON))
-
-
-##FACETTED
-ggplot(yp_smb, aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water,TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  geom_point(data = bd) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water)
-
 ```
 
 ```{r Calculating proportion littoral energy usage, echo=FALSE}
 
-###################
-##  STUDY LAKES  ##
-###################
-#mayfly (L) ; zoop (P)
-data$prop_litt_EZ <- (data$d13C - data$d13C_zoop)/(data$d13C_eph - data$d13C_zoop)
-
-###################
-##  STUDY + REF  ##
-###################
-#eph (L) ; zoop/clam - TADENAC (P)
-data$prop_litt_EZ <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
-data<- data[!is.na(data$prop_litt_EZ),]
-hist(data$prop_litt_EZ)
+#eph (L) ; zoop/clam (P)
+data$prop_litt <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
+data<- data[!is.na(data$prop_litt),]
+hist(data$prop_litt)
 
 #adjusted (<0 and 100<)
-data$adjprop_litt_EZ <- NA
-data$adjprop_litt_EZ = data$prop_litt_EZ
-data$adjprop_litt_EZ[data$prop_litt_EZ>1] <- 1.00
-data$adjprop_litt_EZ[data$prop_litt_EZ<0] <- 0.00
-hist(data$adjprop_litt_EZ)
+data$adjprop_litt <- NA
+data$adjprop_litt = data$prop_litt
+data$adjprop_litt[data$prop_litt>1] <- 1.00
+data$adjprop_litt[data$prop_litt<0] <- 0.00
+hist(data$adjprop_litt)
 ```
 
 ```{r Creating master dataframe 'bigdat'}
 #data summary for creating 'bigdat'
 data_sum <- data %>% group_by(Water, TAXON) %>%
-  summarise(mean.pl = mean(prop_litt_EZ), sd.pl = sd(prop_litt_EZ), mean.adjpl = mean(adjprop_litt_EZ), sd.adjpl = sd(adjprop_litt_EZ))
+  summarise(mean.pl = mean(prop_litt), sd.pl = sd(prop_litt), mean.adjpl = mean(adjprop_litt), sd.adjpl = sd(adjprop_litt))
 #create master data frame w/ all baseline C/Ns, mean prop littoral
 bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
 
-#Filter for lakes of interest and remove baselines
-size_studyl <- read_csv("../data/LCAR_SIA_Database.csv")
+#Filter for lakes of interest, remove baselines, add in size data (FLEN/TLEN)
+size_dat <- read_csv("../data/LCAR_SIA_Database.csv")
 size_td <- read_csv("../data/Tom-ExtraLakes-Isotopes-2021Apr09.csv")
 size_td <- size_td %>%
   filter(grepl("Tadenac", WBY)) %>%
@@ -337,9 +199,9 @@ size_rc <- size_rc %>%
   filter(grepl("Richardson", Lake_Name)) %>%
   filter(!grepl("Baseline", Trophic_Level))
 
-#Remove to have only necessary fields and renaming to common "SIASAM"
-size_studyl<-size_studyl[,c(1,9:11)]
-size_studyl<-size_studyl[-c(172:175),]
+#Remove to have only necessary fields, renaming to common "SIASAM", removing NAs
+size_dat<-size_dat[,c(1,9:11)]
+size_dat<-size_dat[-c(172:175),]
 
 size_td <- size_td[,c(1,9:11)]
 size_td <- size_td %>%
@@ -351,7 +213,7 @@ size_rc <- size_rc %>%
 ###Richardson SIASAM values not included in 'bigdat' so trying to stitch using d13C_Cor
 
 ##stitching data together
-sizedat1 <- rbind(size_studyl, size_td)
+sizedat1 <- rbind(size_dat, size_td)
 
 test <- merge(bigdat, sizedat1, by = "SIASAM")
 test2 <- merge(bigdat, size_rc, by = "d13C_Cor")  ###rearrange to match test and remove duplicate SIASAM column
@@ -360,12 +222,13 @@ test2 <- test2[,-c(4)]
 test2 <- test2 %>%
   rename(SIASAM = SIASAM.y)
 
-test2 <- test2[,c(24,2:7,1,8:23,25:27)]
+test2 <- test2[,c(20,2:6,1,7:19,21:23)]
 
 #stitching together to update 'bigdat'
 bigdat <- rbind(test,test2)
+bigdat[,21:23] <- sapply(bigdat[,21:23], as.numeric)
 
-bigdat[,25:27] <- sapply(bigdat[,25:27], as.numeric)
+rm(data_sum,size_rc,size_td,size_dat,sizedat1,test,test2)
 
 ```
 
@@ -373,7 +236,7 @@ bigdat[,25:27] <- sapply(bigdat[,25:27], as.numeric)
 
 ### TWO BASELINE TP CALCULATION ###
 # two baseline
-bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_EZ)) + (bigdat$d15N_eph*bigdat$prop_litt_EZ)))/3.4)
+bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt)) + (bigdat$d15N_eph*bigdat$prop_litt)))/3.4)
 
 #summarize data for plots
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
@@ -401,7 +264,7 @@ unadjpl <- ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, 
 
 plot(unadjpl)
 
-#adj
+##CJFAS Fig 4 - Adj Prop Littoral##
 adjpl <- 
   ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
   geom_point(show.legend = FALSE) +
@@ -414,10 +277,9 @@ adjpl <-
   facet_wrap(~Water)+
   theme_bw() 
 
-plot(adjpl)
+adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjprop_litt), shape = 1)
 
-adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjprop_litt_EZ), shape = 1)
-
+##CJFAS Supplemental Fig adj vs unadj PL##
 library(cowplot)
 plot_grid(unadjpl, adjpl, labels = "AUTO")
 
@@ -437,7 +299,7 @@ smb_adjPL <- bigdat %>%
   filter(grepl("SMB", TAXON))
 
 ###ANOVA
-smb_pl_aov<-lm(adjprop_litt_EZ ~ Water, data = smb_adjPL)
+smb_pl_aov<-lm(adjprop_litt ~ Water, data = smb_adjPL)
 anova(smb_pl_aov)
 ###contrasts
 #need
@@ -447,7 +309,7 @@ yp_adjPL <- bigdat %>%
   filter(grepl("YP", TAXON))
 
 ###ANOVA
-yp_pl_aov<-lm(adjprop_litt_EZ ~ Water, data = yp_adjPL)
+yp_pl_aov<-lm(adjprop_litt ~ Water, data = yp_adjPL)
 anova(yp_pl_aov)
 
 #Do we do Tukeys here? No? Should we do Tukeys anywhere?
@@ -484,151 +346,15 @@ yp_tp_aov<-lm(tp_2 ~ Water + FLEN, data = ypTP)
 anova(yp_tp_aov)
 
 ```
-###OLD prop littoral range info... is this needed?
-> range(data$prop_littoral)
-[1] -0.815508  1.743316
-> mean(data$prop_littoral)
-[1] 0.8562738
-> median(data$prop_littoral)
-[1] 0.9117647
-
-> range(data$prop_littoral2)
-[1] -1.168582  2.498084
-> mean(data$prop_littoral2)
-[1] 0.8460624
-> median(data$prop_littoral2)
-[1] 0.7676056
-
-```{r Matt code - TP, echo=FALSE}
-##trophic position
-### CALC USING ZOOP (+ CLAM FOR TADENAC) ###
-bigdat$tp_ZC <- 2 + ((bigdat$d15N - bigdat$d15N_zoopclam)/3.4)
-
-### CALC USING EPH ###
-bigdat$tp_EPH <- 2 + ((bigdat$d15N - bigdat$d15N_eph)/3.4)
-
-# two baseline
-bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_EZ)) + (bigdat$d15N_eph*bigdat$prop_litt_EZ)))/3.4)
-
-#summarize data for plots
-data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
-  summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
-
-#tpdat <- bigdat[c(1,2,26,27)]
-
-###AOV for length
-
-```
-
-```{r plots}
-###############
-###  PLOTS  ###
-###############
-
-#####ALL FISH SPC#####
-
-#Zoop - mean
-ggplot(data_sum_tp, aes(x = TAXON, y = mean.tp.zoop, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-#Zoop - quantile boxplot
-ggplot(bigdat, aes(x = TAXON, y = tp_ZC, fill = thermguild, group = TAXON)) +
-  geom_boxplot() +
-  xlab("Fish species") +
-  ylab("Trophic Position (zoop) w/ thermal guild") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-#Mayfly - mean
-ggplot(data_sum_tp, aes(x = TAXON, y = mean.tp.eph, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-#Mayfly - quantile
-ggplot(bigdat, aes(x = TAXON, y = tp_EPH, fill = thermguild, group = TAXON)) +
-  geom_boxplot() +
-  xlab("Fish species") +
-  ylab("Trophic Position (eph/tri) w/ thermal guild") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-#TP 2 - MEAN
-ggplot(data_sum_tp, aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (TP2)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-```
-
-###OLD TP range info... is this needed?
-> range(data$tp_ZCS)
-[1] 2.270588 5.223529
-> mean(data$tp_ZCS)
-[1] 3.571591
-> median(data$tp_ZCS)
-[1] 3.523529
-
-> range(data$tp_EPHTRI)
-[1] 1.950000 5.45
-> mean(data$tp_EPHTRI)
-[1] 3.682063
-> median(data$tp_EPHTRI)
-[1] 3.722581
+##Range info for TP and PL needed for CJFAS body text
 
 
 ```{r Subset TP plots}
-#######################
-###YPERCH + SMB ONLY###
-#######################
 
-## ZOOP
-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp.zoop, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-## MAYFLY
-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp.eph, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-##MIXED TP
+##CJFAS FIGURE 2 - MIXED TP ##
 smbyplab <- c("Smallmouth bass", "Yellow perch")
 
-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
+TPFig<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
   geom_point() +
   geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
   xlab("Fish species") +
@@ -640,45 +366,7 @@ ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = me
   theme_bw() +
   theme(axis.text.x = element_text())
 
-test1<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (two end mixed)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text())
-
-test1 + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
-
-##################
-## NPIKE, PSEED ##
-##################
-
-## ZOOP
-ggplot(subset(data_sum_tp, TAXON %in% c("NPIKE", "PSEED")), aes(x = TAXON, y = mean.tp.zoop, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-## MAYFLY
-ggplot(subset(data_sum_tp, TAXON %in% c("NPIKE", "PSEED")), aes(x = TAXON, y = mean.tp.eph, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
+TPFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
 
 ####################################
 #####ANOVA w TUKEYS HSD for TP######
@@ -718,27 +406,6 @@ lake_tp_aov<-aov(tp_2 ~ Water, data = tpdat)
 summary(lake_tp_aov)
 TukeyHSD(lake_tp_aov, which = "Water")
 
-
-## ZOOP
-ggplot(lake_sum_tp, aes(x = Water, y = mean.tp.zoop, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Lake") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  theme(axis.text.x = element_text(angle = 45))
-
-## MAYFLY
-ggplot(lake_sum_tp, aes(x = Water, y = mean.tp.eph, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Lake") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  theme(axis.text.x = element_text(angle = 45))
-
 ## MIXED
 ggplot(lake_sum_tp, aes(x = Water, y = mean.tp2, colour = Water)) +
   geom_point() +
@@ -749,202 +416,13 @@ ggplot(lake_sum_tp, aes(x = Water, y = mean.tp2, colour = Water)) +
   scale_x_discrete() +
   theme(axis.text.x = element_text(angle = 45))
 
-#############################
-## LAKE AVG W/ COARSE SIZE ##
-#############################
-lake_size_sum_tp <- bigdat %>% group_by(Water, SIZE) %>%
-  summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
-
-## ZOOP
-ggplot(lake_size_sum_tp, aes(x = SIZE, y = mean.tp.zoop, colour = SIZE)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Fish size") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-## MAYFLY
-ggplot(lake_size_sum_tp, aes(x = SIZE, y = mean.tp.eph, colour = SIZE)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Lake") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-
-### JUST SMB, YPERCH, NPIKE, PSEED W/ COARSE SIZE ###
-dat1 <- bigdat %>% group_by(Water, TAXON, SIZE) %>%
-  summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
-
-sm_lakesize_tp <- dat1 %>%
-  filter(grepl("YPERCH|SMB|NPIKE|PSEED", TAXON))
-
-## ZOOP
-ggplot(sm_lakesize_tp, aes(x = TAXON, y = mean.tp.zoop, colour = SIZE)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.zoop + sd.tp.zoop, ymin = mean.tp.zoop - sd.tp.zoop)) +
-  xlab("Lake") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (zoop)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-## MAYFLY
-ggplot(sm_lakesize_tp, aes(x = TAXON, y = mean.tp.eph, colour = SIZE)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp.eph + sd.tp.eph, ymin = mean.tp.eph - sd.tp.eph)) +
-  xlab("Lake") +
-  ylab("Whole-lake Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_discrete() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
 ```
 
-#PREPPING SIZE DATA
-```{r Import, tidy, stitch size data w C/N}
-
-#Filter for lakes of interest and remove baselines
-size_studyl <- read_csv("../data/LCAR_SIA_Database.csv")
-size_td <- read_csv("../data/Tom-ExtraLakes-Isotopes-2021Apr09.csv")
-size_td <- size_td %>%
-  filter(grepl("Tadenac", WBY)) %>%
-  filter(!grepl("MAYFLY|CLAM|EPHEMERI", TAXON))
-  
-size_rc <- read_csv("../data/RichardsonL_SIA-data.csv")
-size_rc <- size_rc %>%
-  filter(grepl("Richardson", Lake_Name)) %>%
-  filter(!grepl("Baseline", Trophic_Level))
-
-#Remove to have only necessary fields and renaming to common "SIASAM"
-size_studyl<-size_studyl[,c(1,9:11)]
-size_studyl<-size_studyl[-c(172:175),]
-
-size_td <- size_td[,c(1,9:11)]
-size_td <- size_td %>%
-  rename(SIASAM = `SIA SAM`)
-
-size_rc <- size_rc[,c(5,15,27:29)]
-size_rc <- size_rc %>%
-  rename(SIASAM = SI_ID)
-###Richardson SIASAM values not included in 'bigdat' so trying to stitch using d13C_Cor
-
-##stitching data together
-sizedat1 <- rbind(size_studyl, size_td)
-
-test <- merge(bigdat, sizedat1, by = "SIASAM")
-test2 <- merge(bigdat, size_rc, by = "d13C_Cor")  ###rearrange to match test and remove duplicate SIASAM column
-
-test2 <- test2[,-c(4)]
-test2 <- test2 %>%
-  rename(SIASAM = SIASAM.y)
-
-test2 <- test2[,c(25,2:7,1,8:24,26:28)]
-
-#stitching together to update 'bigdat'
-bigdat <- rbind(test,test2)
-
-bigdat[,26:28] <- sapply(bigdat[,26:28], as.numeric)
-
-```
 
 #TROPHIC POSITION OF COMMON SPECIES W/ BODY SIZE#
 
 ```{r TP w/ body size}
 #plot y = tp and x = tlen/flen 
-############
-## MAYFLY ##
-############
-## RWT
-#SMB
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = RWT, y = tp_EPH, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-#YPERCH
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = RWT, y = tp_EPH, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-## FLEN/TLEN
-#SMB
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = TLEN, y = tp_EPH, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-#YPERCH
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = TLEN, y = tp_EPH, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-##########
-## ZOOP ##
-##########
-## RWT
-#SMB
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = RWT, y = tp_ZC, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-#YPERCH
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = RWT, y = tp_ZC, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-## TLEN
-#SMB
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = TLEN, y = tp_ZC, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-#YPERCH
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = TLEN, y = tp_ZC, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
 
 ############
 ## MIXED  ##
@@ -989,64 +467,6 @@ ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = TLEN, y = tp_2, colour = 
   facet_wrap(~Water)+
   theme(axis.text.x = element_text(angle = 45))
 
-#########################
-###  COMPARISON PLOT  ###
-#########################
-### SMB ###
-# TLEN
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = TLEN)) +
-  geom_point(aes(y=tp_2, colour = "red")) +
-  geom_point(aes(y=tp_EPH, colour = "gree")) +
-  geom_point(aes(y=tp_ZC, colour = "blue")) +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position") +
-  scale_colour_manual(labels = c("Zoop/Clam", "EPH", "Mixed"), values = c("black", "dark grey", "light grey")) +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45))
-
-# RWT
-ggplot(subset(bigdat, TAXON %in% c("SMB")), aes(x = RWT)) +
-  geom_point(aes(y=tp_2, colour = "red")) +
-  geom_point(aes(y=tp_EPH, colour = "green")) +
-  geom_point(aes(y=tp_ZC, colour = "blue")) +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position") +
-  scale_colour_manual(labels = c("Zoop/Clam", "EPH", "Mixed"), values = c("red", "green", "blue")) +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-### YPERCH ###
-# TLEN
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = TLEN)) +
-  geom_point(aes(y=tp_2, colour = "red")) +
-  geom_point(aes(y=tp_EPH, colour = "green")) +
-  geom_point(aes(y=tp_ZC, colour = "blue")) +
-  xlab("TLEN (mm)") +
-  ylab("Mean Trophic Position") +
-  scale_colour_manual(labels = c("Zoop/Clam", "EPH", "Mixed"), values = c("red", "green", "blue")) +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
-# RWT
-ggplot(subset(bigdat, TAXON %in% c("YPERCH")), aes(x = RWT)) +
-  geom_point(aes(y=tp_2, colour = "red")) +
-  geom_point(aes(y=tp_EPH, colour = "green")) +
-  geom_point(aes(y=tp_ZC, colour = "blue")) +
-  xlab("RWT (g)") +
-  ylab("Mean Trophic Position") +
-  scale_colour_manual(labels = c("Zoop/Clam", "EPH", "Mixed"), values = c("red", "green", "blue")) +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water)+
-  theme(axis.text.x = element_text(angle = 45))
-
 ```
 
 ```{r Mean and SD calculations for TP and body size}
@@ -1064,105 +484,6 @@ sumsizeTP <- subset %>%
 commonsumsizeTP <- sumsizeTP %>%
   filter(grepl("YPERCH|SMB|NPIKE|PSEED",TAXON))
 ```
-
-```{r TP w standardized body size}
-#################
-###    TLEN   ###
-#################
-#EPH
-ggplot(commonsumsizeTP, aes(x = TLEN_mean, y = tp_EPH_mean, colour = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_EPH_mean + tp_EPH_sd, ymin = tp_EPH_mean - tp_EPH_sd)) +
-  xlab("Mean TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-ggplot(commonsumsizeTP, aes(x = TLEN_mean, y = tp_EPH_mean, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_EPH_mean + tp_EPH_sd, ymin = tp_EPH_mean - tp_EPH_sd)) +
-  xlab("Mean TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~TAXON) +
-  theme(axis.text.x = element_text(angle = 45))
-
-#ZOOP
-ggplot(commonsumsizeTP, aes(x = TLEN_mean, y = tp_ZC_mean, colour = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_ZC_mean + tp_ZC_sd, ymin = tp_ZC_mean - tp_ZC_sd)) +
-  xlab("Mean TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-ggplot(commonsumsizeTP, aes(x = TLEN_mean, y = tp_ZC_mean, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_ZC_mean + tp_ZC_sd, ymin = tp_ZC_mean - tp_ZC_sd)) +
-  xlab("Mean TLEN (mm)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~TAXON) +
-  theme(axis.text.x = element_text(angle = 45))
-
-
-#################
-###    RWT    ###
-#################
-#EPH
-ggplot(commonsumsizeTP, aes(x = RWT_mean, y = tp_EPH_mean, colour = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_EPH_mean + tp_EPH_sd, ymin = tp_EPH_mean - tp_EPH_sd)) +
-  xlab("Mean RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-ggplot(commonsumsizeTP, aes(x = RWT_mean, y = tp_EPH_mean, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_EPH_mean + tp_EPH_sd, ymin = tp_EPH_mean - tp_EPH_sd)) +
-  xlab("Mean RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (eph)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~TAXON) +
-  theme(axis.text.x = element_text(angle = 45))
-
-#ZOOP
-ggplot(commonsumsizeTP, aes(x = RWT_mean, y = tp_ZC_mean, colour = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_ZC_mean + tp_ZC_sd, ymin = tp_ZC_mean - tp_ZC_sd)) +
-  xlab("Mean RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~Water) +
-  theme(axis.text.x = element_text(angle = 45))
-
-ggplot(commonsumsizeTP, aes(x = RWT_mean, y = tp_ZC_mean, colour = Water)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = tp_ZC_mean + tp_ZC_sd, ymin = tp_ZC_mean - tp_ZC_sd)) +
-  xlab("Mean RWT (g)") +
-  ylab("Mean Trophic Position +/- sd (zoop/clam)") +
-  scale_y_continuous() +
-  scale_x_continuous() +
-  facet_wrap(~TAXON) +
-  theme(axis.text.x = element_text(angle = 45))
-
-```
-
-
-
-
-
 
 
 ```{r C:N Ratio (Condition) for YP and SMB}
