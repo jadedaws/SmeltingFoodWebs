@@ -1,5 +1,5 @@
 ---
-title: "Isotopes w/ Kevin and Matt - 04-01-2021"
+title: "Study Lakes main calculations and paper figures"
 author: "J Dawson"
 date: '2021-03-31'
 output:
@@ -316,11 +316,60 @@ data$adjprop_litt_EZ = data$prop_litt_EZ
 data$adjprop_litt_EZ[data$prop_litt_EZ>1] <- 1.00
 data$adjprop_litt_EZ[data$prop_litt_EZ<0] <- 0.00
 hist(data$adjprop_litt_EZ)
+```
+
+```{r Creating master dataframe 'bigdat'}
+#data summary for creating 'bigdat'
+data_sum <- data %>% group_by(Water, TAXON) %>%
+  summarise(mean.pl = mean(prop_litt_EZ), sd.pl = sd(prop_litt_EZ), mean.adjpl = mean(adjprop_litt_EZ), sd.adjpl = sd(adjprop_litt_EZ))
+#create master data frame w/ all baseline C/Ns, mean prop littoral
+bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
+
+#Filter for lakes of interest and remove baselines
+size_studyl <- read_csv("../data/LCAR_SIA_Database.csv")
+size_td <- read_csv("../data/Tom-ExtraLakes-Isotopes-2021Apr09.csv")
+size_td <- size_td %>%
+  filter(grepl("Tadenac", WBY)) %>%
+  filter(!grepl("MAYFLY|CLAM|EPHEMERI", TAXON))
+  
+size_rc <- read_csv("../data/RichardsonL_SIA-data.csv")
+size_rc <- size_rc %>%
+  filter(grepl("Richardson", Lake_Name)) %>%
+  filter(!grepl("Baseline", Trophic_Level))
+
+#Remove to have only necessary fields and renaming to common "SIASAM"
+size_studyl<-size_studyl[,c(1,9:11)]
+size_studyl<-size_studyl[-c(172:175),]
+
+size_td <- size_td[,c(1,9:11)]
+size_td <- size_td %>%
+  rename(SIASAM = `SIA SAM`)
+
+size_rc <- size_rc[,c(5,15,27:29)]
+size_rc <- size_rc %>%
+  rename(SIASAM = SI_ID)
+###Richardson SIASAM values not included in 'bigdat' so trying to stitch using d13C_Cor
+
+##stitching data together
+sizedat1 <- rbind(size_studyl, size_td)
+
+test <- merge(bigdat, sizedat1, by = "SIASAM")
+test2 <- merge(bigdat, size_rc, by = "d13C_Cor")  ###rearrange to match test and remove duplicate SIASAM column
+
+test2 <- test2[,-c(4)]
+test2 <- test2 %>%
+  rename(SIASAM = SIASAM.y)
+
+test2 <- test2[,c(24,2:7,1,8:23,25:27)]
+
+#stitching together to update 'bigdat'
+bigdat <- rbind(test,test2)
+
+bigdat[,25:27] <- sapply(bigdat[,25:27], as.numeric)
 
 ```
 
 ```{r Trophic Position calculation, echo=FALSE}
-##trophic position
 
 ### TWO BASELINE TP CALCULATION ###
 # two baseline
@@ -328,25 +377,13 @@ bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_
 
 #summarize data for plots
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
-  summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
+  summarise(mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
 
 #tpdat <- bigdat[c(1,2,26,27)]
 
 ```
 
-#PLOTTING MEAN PROPORTION LITTORAL ENERGY USAGE#
-
-```{r Summarizing data to make proportion littoral plots}
-#summarize data for plots 
-data_sum <- data %>% group_by(Water, TAXON) %>%
-  summarise(mean.pl = mean(prop_litt_EZ), sd.pl = sd(prop_litt_EZ), mean.adjpl = mean(adjprop_litt_EZ), sd.adjpl = sd(adjprop_litt_EZ))
-
-#create master data frame w/ all baseline C/Ns, mean prop littoral
-bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
-  
-##############
-###  PLOT  ###
-##############
+```{r Proportion littoral plots}
 
 smbyplab <- c("Smallmouth bass", "Yellow perch")
 
@@ -390,19 +427,23 @@ plot_grid(unadjpl, adjpl, labels = "AUTO")
 ```{r ANOVA/ANCOVA proportion littoral and TP}
 library(emmeans)
 
+#######################
+###  PROP LITTORAL  ###
+#######################
+
 ##SMB adj prop littoral data
 bigdat$TAXON <- as.factor(bigdat$TAXON)
-smb_adjPL <- adjPL_SMB_YP %>%
+smb_adjPL <- bigdat %>%
   filter(grepl("SMB", TAXON))
 
 ###ANOVA
 smb_pl_aov<-lm(adjprop_litt_EZ ~ Water, data = smb_adjPL)
 anova(smb_pl_aov)
 ###contrasts
-TukeyHSD(smb_pl_aov, which = "Water")
+#need
 
 ##YP adj prop littoral data
-yp_adjPL <- adjPL_SMB_YP %>%
+yp_adjPL <- bigdat %>%
   filter(grepl("YP", TAXON))
 
 ###ANOVA
@@ -423,6 +464,10 @@ x<-as.data.frame(summary(YP_PLFLEN)$emmeans)
 ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()
+
+#####################
+###      TP       ###
+#####################
 
 ##TP + size correction
 ##SMB
@@ -469,7 +514,7 @@ bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt_
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
   summarise(mean.tp.zoop = mean(tp_ZC), sd.tp.zoop = sd(tp_ZC), mean.tp.eph = mean(tp_EPH), sd.tp.eph = sd(tp_EPH), mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
 
-tpdat <- bigdat[c(1,2,26,27)]
+#tpdat <- bigdat[c(1,2,26,27)]
 
 ###AOV for length
 
@@ -552,7 +597,6 @@ ggplot(data_sum_tp, aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON))
 > median(data$tp_EPHTRI)
 [1] 3.722581
 
-#PLOTTING TROPHIC POSITION FOR COMMON FISH SPECIES#
 
 ```{r Subset TP plots}
 #######################
@@ -803,12 +847,12 @@ test2 <- test2[,-c(4)]
 test2 <- test2 %>%
   rename(SIASAM = SIASAM.y)
 
-test2 <- test2[,c(27,2:7,1,8:26,28:30)]
+test2 <- test2[,c(25,2:7,1,8:24,26:28)]
 
 #stitching together to update 'bigdat'
 bigdat <- rbind(test,test2)
 
-bigdat[,28:30] <- sapply(bigdat[,28:30], as.numeric)
+bigdat[,26:28] <- sapply(bigdat[,26:28], as.numeric)
 
 ```
 
