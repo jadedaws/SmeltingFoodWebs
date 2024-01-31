@@ -98,7 +98,6 @@ data$d15N_zoopclam[data$Water == "Tadenac Lk."] <- 3.595
 
 ```
 
-
 ```{r Reformatting the data frame}
 ##Remove baseline entries as rows + site column
 data<-data[,-c(2,8,14,15)]
@@ -117,55 +116,9 @@ data$colour <- "All other species"
 data$colour[data$TAXON == "SMB"] <- "SMB"
 data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
   
-##Subsetting data by lake (facet issues)
-data_bb <- subset(data, data$Water == "Baby Lk.")
-data_dy <- subset(data, data$Water == "Daisy Lk.")
-data_nl <- subset(data, data$Water == "Nelson Lk.")
-data_td <- subset(data, data$Water == "Tadenac Lk.")
-data_rc <- subset(data, data$Water == "Richardson Lk.")
-  
 ```
 
-
-```{r Isoscape plots, echo=FALSE, warning=FALSE, message=FALSE}
-##################################
-########ISOSCAPES BY LAKE#########
-##################################
-
-ggplot(data, aes(x = d13C, y = d15N,  colour = TAXON, group = interaction(Water, TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water)
-
-#CJFAS plot - Figure 3
-##adding colour for SMB + YP only and symbols for taxon
-CJFAS_CN<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, group = interaction(Water, TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water)
-
-CJFAS_CN + 
-  scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
-  scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
-
-
-```
-
-```{r Test plots: SMB + YP isoscapes w/ 40% ellipse across lakes}
-
-##facetted 40% ellipse
-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water,TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water) +
-  labs(title = "40% Ellipse")
-
-```
-
-```{r Calculating proportion littoral energy usage, echo=FALSE}
+```{r Proportion Littoral calculation, echo=FALSE}
 
 #eph (L) ; zoop/clam (P)
 data$prop_litt <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
@@ -180,7 +133,7 @@ data$adjprop_litt[data$prop_litt<0] <- 0.00
 hist(data$adjprop_litt)
 ```
 
-```{r Creating master dataframe 'bigdat'}
+```{r Summarizing prop littoral for 'bigdat'}
 #data summary for creating 'bigdat'
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(prop_litt), sd.pl = sd(prop_litt), mean.adjpl = mean(adjprop_litt), sd.adjpl = sd(adjprop_litt))
@@ -246,7 +199,7 @@ data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
 
 ```
 
-```{r Proportion littoral plots}
+```{r Proportion Littoral plot - CJFAS Fig 4}
 
 smbyplab <- c("Smallmouth bass", "Yellow perch")
 
@@ -262,7 +215,7 @@ unadjpl <- ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, 
   facet_wrap(~Water)+
   theme_bw()
 
-plot(unadjpl)
+#plot(unadjpl)
 
 ##CJFAS Fig 4 - Adj Prop Littoral##
 adjpl <- 
@@ -278,11 +231,6 @@ adjpl <-
   theme_bw() 
 
 adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjprop_litt), shape = 1)
-
-##CJFAS Supplemental Fig adj vs unadj PL##
-library(cowplot)
-plot_grid(unadjpl, adjpl, labels = "AUTO")
-
 
 ```
 
@@ -349,7 +297,7 @@ anova(yp_tp_aov)
 ##Range info for TP and PL needed for CJFAS body text
 
 
-```{r Subset TP plots}
+```{r Trophic Position Plot - CJFAS Fig 2}
 
 ##CJFAS FIGURE 2 - MIXED TP ##
 smbyplab <- c("Smallmouth bass", "Yellow perch")
@@ -418,6 +366,22 @@ ggplot(lake_sum_tp, aes(x = Water, y = mean.tp2, colour = Water)) +
 
 ```
 
+```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
+
+#CJFAS Figure 3 - ellipses
+##adding colour for SMB + YP only and symbols for taxon
+CJFAS_CN<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, group = interaction(Water, TAXON))) +
+  geom_point() +
+  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
+  theme_classic(base_size = 14) +
+  facet_wrap(~Water)
+
+CJFAS_CN + 
+  scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
+  scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
+
+
+```
 
 #TROPHIC POSITION OF COMMON SPECIES W/ BODY SIZE#
 
@@ -485,6 +449,9 @@ commonsumsizeTP <- sumsizeTP %>%
   filter(grepl("YPERCH|SMB|NPIKE|PSEED",TAXON))
 ```
 
+#########################################
+#####     SUPPLEMENTAL FIGURES      #####
+#########################################
 
 ```{r C:N Ratio (Condition) for YP and SMB}
 
@@ -562,7 +529,7 @@ TukeyHSD(smb_cn_aov, which = "Water")
 ```
 
 ```{r Condition - Fulton's index}
-#add FI to masterdata frame
+#add FI to 'bigdat'
 bigdat$FI <- NA
 bigdat$FI <- ifelse(is.na(bigdat$FLEN), (bigdat$RWT/(bigdat$TLEN^3)) * 100000, (bigdat$RWT/(bigdat$FLEN^3)) * 100000)
 
@@ -603,4 +570,24 @@ summary(smb_fi_aov)
 TukeyHSD(smb_fi_aov, which = "Water")
 ```
 
+```{r S14 - Adj vs Unadj Prop Littoral}
+##CJFAS Supplemental Fig adj vs unadj PL##
+library(cowplot)
+plot_grid(unadjpl, adjpl, labels = "AUTO")
+```
 
+#################
+##   DELETE?   ##
+#################
+
+```{#r TO DELETE Test plots: SMB + YP isoscapes w/ 40% ellipse across lakes}
+
+##facetted 40% ellipse
+ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = d13C, y = d15N, colour = TAXON, group = interaction(Water,TAXON))) +
+  geom_point() +
+  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
+  theme_classic(base_size = 14) +
+  facet_wrap(~Water) +
+  labs(title = "40% Ellipse")
+
+```
