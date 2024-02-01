@@ -251,9 +251,12 @@ anova(smb_pl_aov)
 smb_pl_em<-emmeans(smb_pl_aov, pairwise ~ Water, adjust = "none")
 smb_pl_em
 
-SMB_PL<-ggplot(smb_adjPL, aes(x=Water, y=adjprop_litt))+
+x<-as.data.frame(summary(smb_pl_em)$emmeans)
+
+SMB_PL<-ggplot(x, aes(x=Water, y=emmean))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB Prop Litt +/- sd") +  
+  ylab("SMB Prop Litt +/- 95% CI") +  
   theme_bw()
 
 ##YP adj prop littoral data
@@ -261,24 +264,20 @@ yp_adjPL <- bigdat %>%
   filter(grepl("YP", TAXON))
 
 ###ANOVA w/ only sig. variables - TLEN insig. Used TLEN because more data.
-yp_pl_aov<-lm(adjprop_litt ~ Water*FLEN, data = yp_adjPL)
+yp_pl_aov<-lm(adjprop_litt ~ Water*TLEN, data = yp_adjPL)
 anova(yp_pl_aov)
-
-#Do we do Tukeys here? No? Should we do Tukeys anywhere?
-###contrasts
-#TukeyHSD(yp_pl_aov, which = "Water")
 
 ###ANCOVA w/ TLEN interaction
 YP_PLTLEN<-emmeans(yp_pl_aov, pairwise ~ Water, adjust = "none")
 YP_PLTLEN
 
-x<-as.data.frame(summary(YP_PLTLEN)$emmeans)
+x1<-as.data.frame(summary(YP_PLTLEN)$emmeans)
 
 #plot for PL adj
-YP_PL<-ggplot(x, aes(x=Water, y=emmean))+
+YP_PL<-ggplot(x1, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP Prop Litt  +/- sd") +  
+  ylab("YP Prop Litt  +/- 95% CI") +  
   theme_bw()
 
 #####################
@@ -296,13 +295,13 @@ anova(smb_tp_aov)
 smb_tp<-emmeans(smb_tp_aov, pairwise ~ Water, adjust = "none")
 smb_tp
 
-x1<-as.data.frame(summary(smb_tp)$emmeans)
+x2<-as.data.frame(summary(smb_tp)$emmeans)
 
 #plot for SMB TP with body size correction - need to force Y scale the same
-SMB_TP_size<-ggplot(x1, aes(x=Water, y=emmean))+
+SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB TP +/- sd (size corr)") +  
+  ylab("SMB TP +/- 95% CI") +  
   theme_bw()
 
 #YP
@@ -315,13 +314,13 @@ anova(yp_tp_aov)
 yp_tp<-emmeans(yp_tp_aov, pairwise ~ Water, adjust = "none")
 yp_tp
 
-x2<-as.data.frame(summary(yp_tp)$emmeans)
+x3<-as.data.frame(summary(yp_tp)$emmeans)
 
 #plot for YP TP with body size correction - need to force Y scale the same
-YP_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
+YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP TP +/- sd (size corr)") +  
+  ylab("YP TP +/- 95% CI") +  
   theme_bw()
 
 plot_grid(SMB_PL, YP_PL, SMB_TP_size, YP_TP_size, labels = "AUTO")
