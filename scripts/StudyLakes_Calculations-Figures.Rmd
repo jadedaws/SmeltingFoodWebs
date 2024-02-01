@@ -3,8 +3,8 @@ title: "Study Lakes main calculations and paper figures"
 author: "J Dawson"
 date: '2021-03-31'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -133,7 +133,7 @@ data$adjprop_litt[data$prop_litt<0] <- 0.00
 hist(data$adjprop_litt)
 ```
 
-```{r Summarizing prop littoral for 'bigdat'}
+```{r Summarizing prop littoral for bigdat}
 #data summary for creating 'bigdat'
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(prop_litt), sd.pl = sd(prop_litt), mean.adjpl = mean(adjprop_litt), sd.adjpl = sd(adjprop_litt))
@@ -195,8 +195,6 @@ bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt)
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
   summarise(mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
 
-#tpdat <- bigdat[c(1,2,26,27)]
-
 ```
 
 ```{r Proportion Littoral plot - CJFAS Fig 4}
@@ -234,7 +232,7 @@ adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x =
 
 ```
 
-```{r ANOVA/ANCOVA proportion littoral and TP}
+```{r ANOVA/ANCOVA proportion littoral and TP w/ length}
 library(emmeans)
 
 #######################
@@ -246,40 +244,43 @@ bigdat$TAXON <- as.factor(bigdat$TAXON)
 smb_adjPL <- bigdat %>%
   filter(grepl("SMB", TAXON))
 
-###ANOVA
+###ANOVA w/ only sig. variables - FLEN insig.
 smb_pl_aov<-lm(adjprop_litt ~ Water, data = smb_adjPL)
 anova(smb_pl_aov)
 ###contrasts
 #need
 
+SMB_PL<-ggplot(smb_adjPL, aes(x=Water, y=adjprop_litt))+
+  geom_point()
+
 ##YP adj prop littoral data
 yp_adjPL <- bigdat %>%
   filter(grepl("YP", TAXON))
 
-###ANOVA
-yp_pl_aov<-lm(adjprop_litt ~ Water, data = yp_adjPL)
+###ANOVA w/ only sig. variables - TLEN insig. Used TLEN because more data.
+yp_pl_aov<-lm(adjprop_litt ~ Water*TLEN, data = yp_adjPL)
 anova(yp_pl_aov)
 
 #Do we do Tukeys here? No? Should we do Tukeys anywhere?
 ###contrasts
 #TukeyHSD(yp_pl_aov, which = "Water")
 
-###ANCOVA
-YP_PLFLEN<-emmeans(yp_pl_aov, pairwise ~ Water, adjust = "none")
-YP_PLFLEN
+###ANCOVA w/ TLEN interaction
+YP_PLTLEN<-emmeans(yp_pl_aov, pairwise ~ Water, adjust = "none")
+YP_PLTLEN
 
-x<-as.data.frame(summary(YP_PLFLEN)$emmeans)
+x<-as.data.frame(summary(YP_PLTLEN)$emmeans)
 
 #plot for PL adj with body size correction
-ggplot(x, aes(x=Water, y=emmean))+
+YP_PL_size<-ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()
 
 #####################
 ###      TP       ###
 #####################
-
 ##TP + size correction
+
 ##SMB
 smbTP <- bigdat %>%
   filter(grepl("SMB", TAXON))
@@ -287,11 +288,34 @@ smbTP <- bigdat %>%
 smb_tp_aov<-lm(tp_2 ~ Water + FLEN, data = smbTP)
 anova(smb_tp_aov)
 
+smb_tp<-emmeans(smb_tp_aov, pairwise ~ Water, adjust = "none")
+smb_tp
+
+x1<-as.data.frame(summary(smb_tp)$emmeans)
+
+#plot for SMB TP with body size correction - need to force Y scale the same
+SMB_TP_size<-ggplot(x1, aes(x=Water, y=emmean))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+  geom_point()
+
 #YP
 ypTP <- bigdat %>%
   filter(grepl("YPERCH", TAXON))
-yp_tp_aov<-lm(tp_2 ~ Water + FLEN, data = ypTP)
+
+yp_tp_aov<-lm(tp_2 ~ Water + TLEN, data = ypTP)
 anova(yp_tp_aov)
+
+yp_tp<-emmeans(yp_tp_aov, pairwise ~ Water, adjust = "none")
+yp_tp
+
+x2<-as.data.frame(summary(yp_tp)$emmeans)
+
+#plot for YP TP with body size correction - need to force Y scale the same
+YP_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+  geom_point()
+
+plot_grid(SMB_PL, YP_PL_size, SMB_TP_size, YP_TP_size, labels = "AUTO")
 
 ```
 ##Range info for TP and PL needed for CJFAS body text
@@ -402,7 +426,7 @@ ggplot(subset(sumFI, TAXON %in% c("SMB","YPERCH")), aes(x = TAXON, y = mean.FI, 
 
 #FI ANOVA
 #subsetting for FI by spp.
-data_FI <- bigdat[,c(1:3,31)]
+data_FI <- bigdat[,c(1:3,25)]
 data_FI_YP <- data_FI[data_FI$TAXON == "YPERCH",]
 data_FI_SMB <- data_FI[data_FI$TAXON == "SMB",]
 
