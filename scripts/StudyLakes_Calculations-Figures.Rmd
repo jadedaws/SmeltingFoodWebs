@@ -367,6 +367,17 @@ CJFAS_CN +
 
 ```
 
+```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
+TLENdat <- bigdat %>%
+  group_by(Water, TAXON) %>%
+  summarise(TLEN_mean = mean(TLEN), TLEN_sd = sd(TLEN))
+
+bigdat$TLEN_mean <- NA
+bigdat$TLEN_sd <- NA
+
+
+```
+
 #########################################
 #####     SUPPLEMENTAL FIGURES      #####
 #########################################
