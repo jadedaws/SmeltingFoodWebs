@@ -372,9 +372,21 @@ TLENdat <- bigdat %>%
   group_by(Water, TAXON) %>%
   summarise(TLEN_mean = mean(TLEN), TLEN_sd = sd(TLEN))
 
-bigdat$TLEN_mean <- NA
-bigdat$TLEN_sd <- NA
+bigdat <- merge(bigdat, TLENdat, by = c("Water", "TAXON"))
 
+TLENFig<-ggplot(subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN_mean, colour = TAXON, group = TAXON)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = TLEN_mean + TLEN_sd, ymin = TLEN_mean - TLEN_sd)) +
+  xlab("Fish species") +
+  ylab("Mean Total Length +/- sd (mm)") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw() +
+  theme(axis.text.x = element_text())
+
+TLENFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN), shape = 1)
 
 ```
 
