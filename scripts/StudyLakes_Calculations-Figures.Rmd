@@ -62,24 +62,24 @@ d15N <- d15N %>%
 base_data <- merge(d13C, d15N, by = "Water")
 
 ###Tadenac does not have zoop baseline, so combine Zoop and Clam column for it
-data$d13C_zoopclam <- data$d13C_zoop
-data$d13C_zoopclam[data$Water == "Tadenac Lk."] <- -27.796
-data$d15N_zoopclam <- data$d15N_zoop
-data$d15N_zoopclam[data$Water == "Tadenac Lk."] <- 3.595
+base_data$d13C_zoopclam <- base_data$d13C_zoop
+base_data$d13C_zoopclam[base_data$Water == "Tadenac Lk."] <- -27.796
+base_data$d15N_zoopclam <- base_data$d15N_zoop
+base_data$d15N_zoopclam[base_data$Water == "Tadenac Lk."] <- 3.595
+
+base_data <- subset(base_data, select=-c(d13C_clam, d15N_clam))
 
 data <- merge(data, base_data, by = c("Water"))
 
 rm(base_data)
 ```
 
-```{r Reformatting the data frame}
+```{r Tidying df}
 ##Remove baseline entries as rows + site column
-data<-data[,-c(2,8,14,15)]
+data <- subset(data, select=-c(Site,SIZE))
+
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|TRICHOPT|CRAYFISH|CLAM|SNAIL", TAXON))
-
-##Removing entries with NA for C/N
-data <- data[!is.na(data$d13C),]
 
 ##Renaming some of the fish species to match each other
 data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
