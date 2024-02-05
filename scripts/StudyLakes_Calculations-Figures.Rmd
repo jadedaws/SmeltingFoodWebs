@@ -39,63 +39,37 @@ base_data$TAXON[base_data$TAXON == "EPHEMERI"] <- "MAYFLY"
 ```
 
 ```{r Mean C and N by TAXON within each lake}
-base_data_sum <- base_data %>%
+#mean d13C, d15N, sd by baseline
+base_data <- base_data %>%
   group_by(Water, TAXON) %>%
+  subset(TAXON %in% c("CLAM", "MAYFLY", "ZOOP")) %>%
   summarise(mean_d13C = mean(d13C), mean_d15N = mean(d15N), sd_d13C = sd(d13C), sd_d15N = sd(d15N))
 
-## Baseline mean C and N plot ##
-ggplot(subset(base_data_sum, TAXON %in% c("CLAM","MAYFLY", "TRICHOPT", "ZOOP")), aes(x = mean_d13C, y = mean_d15N,  colour = Water, shape = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean_d15N + sd_d15N, ymin = mean_d15N - sd_d15N)) +
-  scale_shape_manual(values = c(0,15,18,1)) +
-  theme_classic(base_size = 14) +
-  xlim(-35,-20) + ylim(0,5) +
-  labs(title = "Baselines comparison w/ means +/- sd", x = "d13C", y = "d15N")
+#make dataset w columns for d13C, d15N by baseline (eph) and (zoopclam)
+library(reshape2)
+d13C <- dcast(data = base_data, formula = Water ~ TAXON, value.var = "mean_d13C")
+d13C <- d13C %>% 
+        rename("d13C_clam" = "CLAM",
+               "d13C_eph" = "MAYFLY",
+               "d13C_zoop" = "ZOOP")
 
-rm(base_data, base_data_sum)
-```
+d15N <- dcast(data = base_data, formula = Water ~ TAXON, value.var = "mean_d15N")
+d15N <- d15N %>% 
+        rename("d15N_clam" = "CLAM",
+               "d15N_eph" = "MAYFLY",
+               "d15N_zoop" = "ZOOP")
 
-```{r Adding baseline mean C + N as columns}
-### ZOOP ### - Tadenac Lk does not have zoop baselines.*
-data$d13C_zoop<-NA
-data$d13C_zoop[data$Water == "Baby Lk."] <- -30.69
-data$d13C_zoop[data$Water == "Daisy Lk."] <- -32.93
-data$d13C_zoop[data$Water == "Nelson Lk."] <- -34.07
-data$d13C_zoop[data$Water == "Richardson Lk."] <- -32.220675
-data$d15N_zoop<- NA
-data$d15N_zoop[data$Water == "Baby Lk."] <- 1.85
-data$d15N_zoop[data$Water == "Daisy Lk."] <- 3.10
-data$d15N_zoop[data$Water == "Nelson Lk."] <- 3.60
-data$d15N_zoop[data$Water == "Richardson Lk."] <- 2.235965
+base_data <- merge(d13C, d15N, by = "Water")
 
-### EPH (Mayfly) ###
-data$d13C_eph <- NA
-data$d13C_eph[data$Water == "Baby Lk."] <- -28.08
-data$d13C_eph[data$Water == "Daisy Lk."] <- -25.88
-data$d13C_eph[data$Water == "Nelson Lk."] <- -26.97
-data$d13C_eph[data$Water == "Tadenac Lk."] <- -26.92143
-data$d13C_eph[data$Water == "Richardson Lk."] <- -25.215266
-data$d15N_eph <- NA
-data$d15N_eph[data$Water == "Baby Lk."] <- 3.60
-data$d15N_eph[data$Water == "Daisy Lk."] <- 1.69
-data$d15N_eph[data$Water == "Nelson Lk."] <- 0.88
-data$d15N_eph[data$Water == "Tadenac Lk."] <- 3.572857
-data$d15N_eph[data$Water == "Richardson Lk."] <- 3.247864
-
-### CLAM ###
-data$d13C_clam <- NA
-data$d13C_clam[data$Water == "Tadenac Lk."] <- -27.796
-data$d13C_clam[data$Water == "Richardson Lk."] <- -30.80193
-data$d15N_clam <- NA
-data$d15N_clam[data$Water == "Tadenac Lk."] <- 3.595
-data$d15N_clam[data$Water == "Richardson Lk."] <- 2.019227
-
-### ZOOP-CLAM ###
+###Tadenac does not have zoop baseline, so combine Zoop and Clam column for it
 data$d13C_zoopclam <- data$d13C_zoop
 data$d13C_zoopclam[data$Water == "Tadenac Lk."] <- -27.796
 data$d15N_zoopclam <- data$d15N_zoop
 data$d15N_zoopclam[data$Water == "Tadenac Lk."] <- 3.595
 
+data <- merge(data, base_data, by = c("Water"))
+
+rm(base_data)
 ```
 
 ```{r Reformatting the data frame}
@@ -286,10 +260,7 @@ YP_PL<-ggplot(x1, aes(x=Water, y=emmean))+
 ##TP + size correction
 
 ##SMB
-smbTP <- bigdat %>%
-  filter(grepl("SMB", TAXON))
-
-smb_tp_aov<-lm(tp_2 ~ Water*FLEN, data = smbTP)
+smb_tp_aov<- lm(tp_2~Water*TLEN, data=bigdat, subset=(TAXON=="SMB"))
 anova(smb_tp_aov)
 
 smb_tp<-emmeans(smb_tp_aov, pairwise ~ Water, adjust = "none")
@@ -305,10 +276,7 @@ SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   theme_bw()
 
 #YP
-ypTP <- bigdat %>%
-  filter(grepl("YPERCH", TAXON))
-
-yp_tp_aov<-lm(tp_2 ~ Water*TLEN, data = ypTP)
+yp_tp_aov<- lm(tp_2~Water*TLEN, data=bigdat, subset=(TAXON=="YPERCH"))
 anova(yp_tp_aov)
 
 yp_tp<-emmeans(yp_tp_aov, pairwise ~ Water, adjust = "none")
