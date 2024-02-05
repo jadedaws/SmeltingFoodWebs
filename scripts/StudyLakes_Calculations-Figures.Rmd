@@ -19,12 +19,11 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 
-###Github connection to McCann & Johnson dataset for CompleteIso with the BsM comparison lakes
+###Github connection to McCann & Johnston dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
-
-###Removing lakes w/ incomplete baselines (Fairbank, Endikai)
-data <- data %>%
-  filter(!grepl("Fairbank Lk.|Endikai Lk.", Water))
+###Adding new lakes from Johnston
+new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb05.csv")
+###Stitching
 
 ```
 
