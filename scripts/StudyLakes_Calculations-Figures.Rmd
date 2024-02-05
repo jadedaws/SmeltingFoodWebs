@@ -425,7 +425,7 @@ ggplot(subset(sumFI, TAXON %in% c("SMB","YPERCH")), aes(x = TAXON, y = mean.FI, 
 
 #FI ANOVA
 #subsetting for FI by spp.
-data_FI <- bigdat[,c(1:3,25)]
+data_FI <- bigdat[,c(1:3,27)]
 data_FI_YP <- data_FI[data_FI$TAXON == "YPERCH",]
 data_FI_SMB <- data_FI[data_FI$TAXON == "SMB",]
 
