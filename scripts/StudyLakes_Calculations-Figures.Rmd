@@ -82,7 +82,7 @@ base_data$d15N_lit <- coalesce(base_data$d15N_eph,base_data$d15N_snail)
 
 base_data <- subset(base_data, select=c(Water, d13C_pel, d15N_pel, d13C_lit, d15N_lit))
 data<-left_join(data,base_data,keep=F)
-rm(base_data)
+rm(d13C, d15N, base_data)
 
 ##Remove NA entries and baseline entries
 data <- data[complete.cases(data[,c('Water')]),]
@@ -109,6 +109,8 @@ data$adjp_lit = data$p_lit
 data$adjp_lit[data$p_lit>1] <- 1.00
 data$adjp_lit[data$p_lit<0] <- 0.00
 hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
+
+rm(smbyp_CN)
 ```
 
 ```{r Summarizing prop littoral for bigdat}
@@ -118,29 +120,13 @@ data_sum <- data %>% group_by(Water, TAXON) %>%
 #create master data frame w/ all baseline C/Ns, mean prop littoral
 bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
 
-#Filter for lakes of interest, remove baselines, add in size data (FLEN/TLEN)
+#add size dataset
 size_dat <- read_csv("../data/LCAR_SIA_Database.csv")
-size_td <- read_csv("../data/Tom-ExtraLakes-Isotopes-2021Apr09.csv")
-size_td <- size_td %>%
-  filter(grepl("Tadenac", WBY)) %>%
-  filter(!grepl("MAYFLY|CLAM|EPHEMERI", TAXON))
   
-size_rc <- read_csv("../data/RichardsonL_SIA-data.csv")
-size_rc <- size_rc %>%
-  filter(grepl("Richardson", Lake_Name)) %>%
-  filter(!grepl("Baseline", Trophic_Level))
-
 #Remove to have only necessary fields, renaming to common "SIASAM", removing NAs
 size_dat<-size_dat[,c(1,9:11)]
 size_dat<-size_dat[-c(172:175),]
 
-size_td <- size_td[,c(1,9:11)]
-size_td <- size_td %>%
-  rename(SIASAM = `SIA SAM`)
-
-size_rc <- size_rc[,c(5,15,27:29)]
-size_rc <- size_rc %>%
-  rename(SIASAM = SI_ID)
 ###Richardson SIASAM values not included in 'bigdat' so trying to stitch using d13C_Cor
 
 ##stitching data together
