@@ -29,7 +29,7 @@ new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb05.csv")
 new_dat <- new_dat[-c(1),] %>%
   filter(!grepl("O", Check))
 
-new_dat <- subset(new_dat, select=-c(FISH, YEAR, DAY, COMP, Check, Comments)) %>%
+new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Check, Comments)) %>%
           rename("SIASAM" = "SIA SAM",
                "Water" = "WBY",
                "d13C" = "Del 13C",
@@ -77,11 +77,14 @@ d15N <- d15N %>%
 
 base_data <- merge(d13C, d15N, by = "Water")
 
-###Tadenac does not have zoop baseline, so combine Zoop and Clam column for it
-base_data$d13C_zoopclam <- base_data$d13C_zoop
-base_data$d13C_zoopclam[base_data$Water == "Tadenac Lk."] <- -27.796
-base_data$d15N_zoopclam <- base_data$d15N_zoop
-base_data$d15N_zoopclam[base_data$Water == "Tadenac Lk."] <- 3.595
+###Some ref lakes do not have zoop baseline, so combine Zoop and Clam column for it (pel)
+##use coalesce()
+base_data$d13C_pel <- unite(base_data$d13C_clam,base_data$d13C_zoop, sep="_", na.rm=T)
+
+
+base_data$d13C_pel[base_data$Water == "Tadenac Lk."] <- -27.796
+base_data$d15N_pel <- base_data$d15N_zoop
+base_data$d15N_pel[base_data$Water == "Tadenac Lk."] <- 3.595
 
 base_data <- subset(base_data, select=-c(d13C_clam, d15N_clam))
 
@@ -111,7 +114,7 @@ data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
 ```{r Proportion Littoral calculation}
 
 #eph (L) ; zoop/clam (P)
-data$prop_litt <- (data$d13C - data$d13C_zoopclam)/(data$d13C_eph - data$d13C_zoopclam)
+data$prop_litt <- (data$d13C - data$d13C_pel)/(data$d13C_eph - data$d13C_pel)
 data<- data[!is.na(data$prop_litt),]
 hist(data$prop_litt)
 
@@ -179,7 +182,7 @@ rm(data_sum,size_rc,size_td,size_dat,sizedat1,test,test2)
 
 ### TWO BASELINE TP CALCULATION ###
 # two baseline
-bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_zoopclam*(1 - bigdat$prop_litt)) + (bigdat$d15N_eph*bigdat$prop_litt)))/3.4)
+bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_pel*(1 - bigdat$prop_litt)) + (bigdat$d15N_eph*bigdat$prop_litt)))/3.4)
 
 #summarize data for plots
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
