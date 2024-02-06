@@ -21,42 +21,59 @@ library(readr)
 
 ###Github connection to McCann & Johnston dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
+data <- subset(data, select=-c(d13C_Cor, Site)) %>%
+  filter(!grepl("Richardson Lk.", Water))
+  
 ###Adding new lakes from Johnston
 new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb05.csv")
-###Stitching
+new_dat <- new_dat[-c(1),] %>%
+  filter(!grepl("O", Check))
 
+new_dat <- subset(new_dat, select=-c(FISH, YEAR, DAY, COMP, Check, Comments)) %>%
+          rename("SIASAM" = "SIA SAM",
+               "Water" = "WBY",
+               "d13C" = "Del 13C",
+               "d15N" = "Del 15N",
+               "C.N" = "C/N") %>%
+          select(Water, TAXON, SIASAM, d13C, d15N, C.N, everything())
+
+###Stitching
+cols.num <- c("d13C","d15N", "C.N", "FLEN", "TLEN", "RWT")
+new_dat[cols.num] <- sapply(new_dat[cols.num],as.numeric)
+data <- bind_rows(data, new_dat)
+
+rm(new_dat)
 ```
 
 ```{r Cleaning baseline data}
 ##Subsetting data for just baselines
 base_data <- data %>%
-  filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|TRICHOPT|CLAM", TAXON))
+  filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|TRICHOPT|CLAM|DRAGFLY|CRAYFISH|CHIRO|AMPHIPOD|HEPTAGEN|CHAOBORUS", TAXON)) %>%
+  mutate(TAXON = recode(TAXON, EPH='MAYFLY', EPHEMERI='MAYFLY', HEPTAGEN='MAYFLY'))
 
-base_data$TAXON[base_data$TAXON == "EPH"] <- "MAYFLY"
-base_data$TAXON[base_data$TAXON == "EPHEMERI"] <- "MAYFLY"
-
-```
-
-```{r Mean C and N by TAXON within each lake}
 #mean d13C, d15N, sd by baseline
 base_data <- base_data %>%
   group_by(Water, TAXON) %>%
-  subset(TAXON %in% c("CLAM", "MAYFLY", "ZOOP")) %>%
+  subset(TAXON %in% c("CLAM", "MAYFLY", "ZOOP","SNAIL","AMPHIPOD")) %>%
   summarise(mean_d13C = mean(d13C), mean_d15N = mean(d15N), sd_d13C = sd(d13C), sd_d15N = sd(d15N))
 
-#make dataset w columns for d13C, d15N by baseline (eph) and (zoopclam)
+#make dataset w columns for d13C, d15N by baseline
 library(reshape2)
 d13C <- dcast(data = base_data, formula = Water ~ TAXON, value.var = "mean_d13C")
 d13C <- d13C %>% 
         rename("d13C_clam" = "CLAM",
                "d13C_eph" = "MAYFLY",
-               "d13C_zoop" = "ZOOP")
+               "d13C_zoop" = "ZOOP",
+               "d13C_snail" = "SNAIL",
+               "d13C_amph" = "AMPHIPOD")
 
 d15N <- dcast(data = base_data, formula = Water ~ TAXON, value.var = "mean_d15N")
 d15N <- d15N %>% 
         rename("d15N_clam" = "CLAM",
                "d15N_eph" = "MAYFLY",
-               "d15N_zoop" = "ZOOP")
+               "d15N_zoop" = "ZOOP",
+               "d15N_snail" = "SNAIL",
+               "d15N_amph" = "AMPHIPOD")
 
 base_data <- merge(d13C, d15N, by = "Water")
 
