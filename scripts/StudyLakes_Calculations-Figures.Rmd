@@ -27,7 +27,8 @@ data <- subset(data, select=-c(d13C_Cor, Site)) %>%
 ###Adding new lakes from Johnston
 new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb05.csv")
 new_dat <- new_dat[-c(1),] %>%
-  filter(!grepl("O", Check))
+  filter(!grepl("O", Check)) %>%
+  filter(!grepl("Clearwater", WBY))
 
 new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Check, Comments)) %>%
           rename("SIASAM" = "SIA SAM",
@@ -78,29 +79,29 @@ d15N <- d15N %>%
 base_data <- merge(d13C, d15N, by = "Water")
 
 ###Some ref lakes do not have zoop baseline, so combine Zoop and Clam column for it (pel)
-##use coalesce()
-base_data$d13C_pel <- unite(base_data$d13C_clam,base_data$d13C_zoop, sep="_", na.rm=T)
+base_data$d13C_pel <- coalesce(base_data$d13C_clam,base_data$d13C_zoop)
+base_data$d15N_pel <- coalesce(base_data$d15N_clam,base_data$d15N_zoop)
 
+base_data$d13C_lit <- coalesce(base_data$d13C_eph,base_data$d13C_snail)
+base_data$d15N_lit <- coalesce(base_data$d15N_eph,base_data$d15N_snail)
 
-base_data$d13C_pel[base_data$Water == "Tadenac Lk."] <- -27.796
-base_data$d15N_pel <- base_data$d15N_zoop
-base_data$d15N_pel[base_data$Water == "Tadenac Lk."] <- 3.595
+base_data <- subset(base_data, select=c(Water, d13C_pel, d15N_pel, d13C_lit, d15N_lit))
 
-base_data <- subset(base_data, select=-c(d13C_clam, d15N_clam))
-
-data <- merge(data, base_data, by = c("Water"))
+data<-left_join(data,base_data,keep=F)
 
 rm(base_data)
 ```
 
 ```{r Tidying df}
 ##Remove baseline entries as rows + site column
+#still needed?
 data <- subset(data, select=-c(Site,SIZE))
 
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|TRICHOPT|CRAYFISH|CLAM|SNAIL", TAXON))
 
 ##Renaming some of the fish species to match each other
+#need to do for new fish spc
 data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
 data$TAXON[data$TAXON == "NP"] <- "NPIKE"
 
