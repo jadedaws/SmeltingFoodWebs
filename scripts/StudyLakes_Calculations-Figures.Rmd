@@ -21,14 +21,10 @@ library(readr)
 
 ###Github connection to McCann & Johnston dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
-data <- subset(data, select=-c(d13C_Cor, Site)) %>%
-  filter(!grepl("Richardson Lk.", Water))
+data <- subset(data, select=-c(Site))
   
 ###Adding new lakes from Johnston
-new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb05.csv")
-new_dat <- new_dat[-c(1),] %>%
-  filter(!grepl("O", Check)) %>%
-  filter(!grepl("Clearwater", WBY))
+new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb06.csv")
 
 new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Check, Comments)) %>%
           rename("SIASAM" = "SIA SAM",
@@ -49,7 +45,7 @@ rm(new_dat)
 ```{r Cleaning baseline data}
 ##Subsetting data for just baselines
 base_data <- data %>%
-  filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|TRICHOPT|CLAM|DRAGFLY|CRAYFISH|CHIRO|AMPHIPOD|HEPTAGEN|CHAOBORUS", TAXON)) %>%
+  filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|CLAM|CRAYFISH|AMPHIPOD|HEPTAGEN", TAXON)) %>%
   mutate(TAXON = recode(TAXON, EPH='MAYFLY', EPHEMERI='MAYFLY', HEPTAGEN='MAYFLY'))
 
 #mean d13C, d15N, sd by baseline
@@ -81,56 +77,44 @@ base_data <- merge(d13C, d15N, by = "Water")
 ###Some ref lakes do not have zoop baseline, so combine Zoop and Clam column for it (pel)
 base_data$d13C_pel <- coalesce(base_data$d13C_clam,base_data$d13C_zoop)
 base_data$d15N_pel <- coalesce(base_data$d15N_clam,base_data$d15N_zoop)
-
 base_data$d13C_lit <- coalesce(base_data$d13C_eph,base_data$d13C_snail)
 base_data$d15N_lit <- coalesce(base_data$d15N_eph,base_data$d15N_snail)
 
 base_data <- subset(base_data, select=c(Water, d13C_pel, d15N_pel, d13C_lit, d15N_lit))
-
 data<-left_join(data,base_data,keep=F)
-
 rm(base_data)
-```
 
-```{r Tidying df}
-##Remove baseline entries as rows + site column
-#still needed?
-data <- subset(data, select=-c(Site,SIZE))
-
+##Remove NA entries and baseline entries
+data <- data[complete.cases(data[,c('Water')]),]
 data <- data %>%
-  filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|TRICHOPT|CRAYFISH|CLAM|SNAIL", TAXON))
-
-##Renaming some of the fish species to match each other
-#need to do for new fish spc
-data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
-data$TAXON[data$TAXON == "NP"] <- "NPIKE"
-
-##Adding column for isoscape/biplot colouration
-data$colour <- "All other species"
-data$colour[data$TAXON == "SMB"] <- "SMB"
-data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
-  
+  filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|CRAYFISH|CLAM|SNAIL|AMPHIPOD", TAXON))
 ```
 
 ```{r Proportion Littoral calculation}
+data$p_lit <- (data$d13C - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
+data<- data[!is.na(data$p_lit),]
 
-#eph (L) ; zoop/clam (P)
-data$prop_litt <- (data$d13C - data$d13C_pel)/(data$d13C_eph - data$d13C_pel)
-data<- data[!is.na(data$prop_litt),]
-hist(data$prop_litt)
+#rough plotting
+hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
+
+smbyp_CN<-ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = d13C, y = d15N, colour = TAXON, group = TAXON)) +
+  geom_point(show.legend = FALSE) +
+  facet_wrap(~Water)
+smbyp_CN + geom_point(aes(x = d13C_lit, y = d15N_lit, colour = "littoral")) +
+  geom_point(aes(x = d13C_pel, y = d15N_pel, colour = "pelagic"))
 
 #adjusted (<0 and 100<)
-data$adjprop_litt <- NA
-data$adjprop_litt = data$prop_litt
-data$adjprop_litt[data$prop_litt>1] <- 1.00
-data$adjprop_litt[data$prop_litt<0] <- 0.00
-hist(data$adjprop_litt)
+data$adjp_lit <- NA
+data$adjp_lit = data$p_lit
+data$adjp_lit[data$p_lit>1] <- 1.00
+data$adjp_lit[data$p_lit<0] <- 0.00
+hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
 ```
 
 ```{r Summarizing prop littoral for bigdat}
 #data summary for creating 'bigdat'
 data_sum <- data %>% group_by(Water, TAXON) %>%
-  summarise(mean.pl = mean(prop_litt), sd.pl = sd(prop_litt), mean.adjpl = mean(adjprop_litt), sd.adjpl = sd(adjprop_litt))
+  summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #create master data frame w/ all baseline C/Ns, mean prop littoral
 bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
 
@@ -183,7 +167,7 @@ rm(data_sum,size_rc,size_td,size_dat,sizedat1,test,test2)
 
 ### TWO BASELINE TP CALCULATION ###
 # two baseline
-bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_pel*(1 - bigdat$prop_litt)) + (bigdat$d15N_eph*bigdat$prop_litt)))/3.4)
+bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_pel*(1 - bigdat$p_lit)) + (bigdat$d15N_eph*bigdat$p_lit)))/3.4)
 
 #summarize data for plots
 data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
@@ -222,7 +206,7 @@ adjpl <-
   facet_wrap(~Water)+
   theme_bw() 
 
-adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjprop_litt), shape = 1)
+adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
 
 ```
 
@@ -239,7 +223,7 @@ smb_adjPL <- bigdat %>%
   filter(grepl("SMB", TAXON))
 
 ###ANOVA w/ only sig. variables - FLEN insig.
-smb_pl_aov<-lm(adjprop_litt ~ Water, data = smb_adjPL)
+smb_pl_aov<-lm(adjp_lit ~ Water, data = smb_adjPL)
 anova(smb_pl_aov)
 ###contrasts
 smb_pl_em<-emmeans(smb_pl_aov, pairwise ~ Water, adjust = "none")
@@ -258,7 +242,7 @@ yp_adjPL <- bigdat %>%
   filter(grepl("YP", TAXON))
 
 ###ANOVA w/ only sig. variables - TLEN insig. Used TLEN because more data.
-yp_pl_aov<-lm(adjprop_litt ~ Water*TLEN, data = yp_adjPL)
+yp_pl_aov<-lm(adjp_lit ~ Water*TLEN, data = yp_adjPL)
 anova(yp_pl_aov)
 
 ###ANCOVA w/ TLEN interaction
@@ -339,6 +323,15 @@ TPFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x =
 ```
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
+##Renaming some of the fish species to match each other
+#need to do for new fish spc
+data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
+data$TAXON[data$TAXON == "NP"] <- "NPIKE"
+
+##Adding column for isoscape/biplot colouration
+data$colour <- "All other species"
+data$colour[data$TAXON == "SMB"] <- "SMB"
+data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
 
 #CJFAS Figure 3 - ellipses
 ##adding colour for SMB + YP only and symbols for taxon
