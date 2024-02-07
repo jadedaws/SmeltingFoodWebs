@@ -20,9 +20,8 @@ library(ggplot2)
 library(readr)
 
 ###Github connection to McCann & Johnston dataset for CompleteIso with the BsM comparison lakes
-data <- read_csv("../data/CompleteIsotopeswBsMCompLakes.csv")
-data <- subset(data, select=-c(Site))
-  
+data <- read_csv("../data/Dawson-Isotopes-StudyLakes.csv")
+
 ###Adding new lakes from Johnston
 new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb06.csv")
 
@@ -38,8 +37,9 @@ new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Chec
 cols.num <- c("d13C","d15N", "C.N", "FLEN", "TLEN", "RWT")
 new_dat[cols.num] <- sapply(new_dat[cols.num],as.numeric)
 data <- bind_rows(data, new_dat)
+data<- data[!is.na(data$d13C),]
 
-rm(new_dat)
+rm(size_dat, new_dat)
 ```
 
 ```{r Cleaning baseline data}
@@ -84,15 +84,13 @@ base_data <- subset(base_data, select=c(Water, d13C_pel, d15N_pel, d13C_lit, d15
 data<-left_join(data,base_data,keep=F)
 rm(d13C, d15N, base_data)
 
-##Remove NA entries and baseline entries
-data <- data[complete.cases(data[,c('Water')]),]
+##Remove baseline entries
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|CRAYFISH|CLAM|SNAIL|AMPHIPOD", TAXON))
 ```
 
 ```{r Proportion Littoral calculation}
 data$p_lit <- (data$d13C - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
-data<- data[!is.na(data$p_lit),]
 
 #rough plotting
 hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
@@ -113,52 +111,27 @@ hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
 rm(smbyp_CN)
 ```
 
-```{r Summarizing prop littoral for bigdat}
-#data summary for creating 'bigdat'
+```{r Summarizing prop littoral for data}
+#data summary for creating 'data'
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
-#create master data frame w/ all baseline C/Ns, mean prop littoral
-bigdat <- merge(data, data_sum, by = c("Water", "TAXON"))
+#add to df
+data <- merge(data, data_sum, by = c("Water", "TAXON"))
 
-#add size dataset
-size_dat <- read_csv("../data/LCAR_SIA_Database.csv")
-  
-#Remove to have only necessary fields, renaming to common "SIASAM", removing NAs
-size_dat<-size_dat[,c(1,9:11)]
-size_dat<-size_dat[-c(172:175),]
-
-###Richardson SIASAM values not included in 'bigdat' so trying to stitch using d13C_Cor
-
-##stitching data together
-sizedat1 <- rbind(size_dat, size_td)
-
-test <- merge(bigdat, sizedat1, by = "SIASAM")
-test2 <- merge(bigdat, size_rc, by = "d13C_Cor")  ###rearrange to match test and remove duplicate SIASAM column
-
-test2 <- test2[,-c(4)]
-test2 <- test2 %>%
-  rename(SIASAM = SIASAM.y)
-
-test2 <- test2[,c(20,2:6,1,7:19,21:23)]
-
-#stitching together to update 'bigdat'
-bigdat <- rbind(test,test2)
-bigdat[,21:23] <- sapply(bigdat[,21:23], as.numeric)
-
-rm(data_sum,size_rc,size_td,size_dat,sizedat1,test,test2)
-
+rm(data_sum)
 ```
 
 ```{r Trophic Position calculation}
-
-### TWO BASELINE TP CALCULATION ###
 # two baseline
-bigdat$tp_2 <- 2 + ((bigdat$d15N - ((bigdat$d15N_pel*(1 - bigdat$p_lit)) + (bigdat$d15N_eph*bigdat$p_lit)))/3.4)
+data$tp_2 <- 2 + ((data$d15N - ((data$d15N_pel*(1 - data$p_lit)) + (data$d15N_lit*data$p_lit)))/3.4)
 
-#summarize data for plots
-data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
+#summarize tp by species
+data_sum_tp <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
+#add to df
+data <- merge(data, data_sum_tp, by = c("Water", "TAXON"))
 
+rm(data_sum_tp)
 ```
 
 ```{r Proportion Littoral plot - CJFAS Fig 4}
@@ -166,7 +139,7 @@ data_sum_tp <- bigdat %>% group_by(Water, TAXON) %>%
 smbyplab <- c("Smallmouth bass", "Yellow perch")
 
 ##MEAN +/- sd
-unadjpl <- ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
+unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
   geom_point(show.legend = FALSE) +
   geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
   xlab("Fish species") +
@@ -181,7 +154,7 @@ unadjpl <- ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, 
 
 ##CJFAS Fig 4 - Adj Prop Littoral##
 adjpl <- 
-  ggplot(subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
+  ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
   geom_point(show.legend = FALSE) +
   geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
   xlab("Fish species") +
@@ -192,7 +165,7 @@ adjpl <-
   facet_wrap(~Water)+
   theme_bw() 
 
-adjpl + geom_point(data = subset(bigdat, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
+adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
 
 ```
 
@@ -204,8 +177,8 @@ library(emmeans)
 #######################
 
 ##SMB adj prop littoral data
-bigdat$TAXON <- as.factor(bigdat$TAXON)
-smb_adjPL <- bigdat %>%
+data$TAXON <- as.factor(data$TAXON)
+smb_adjPL <- data %>%
   filter(grepl("SMB", TAXON))
 
 ###ANOVA w/ only sig. variables - FLEN insig.
@@ -224,7 +197,7 @@ SMB_PL<-ggplot(x, aes(x=Water, y=emmean))+
   theme_bw()
 
 ##YP adj prop littoral data
-yp_adjPL <- bigdat %>%
+yp_adjPL <- data %>%
   filter(grepl("YP", TAXON))
 
 ###ANOVA w/ only sig. variables - TLEN insig. Used TLEN because more data.
@@ -250,7 +223,7 @@ YP_PL<-ggplot(x1, aes(x=Water, y=emmean))+
 ##TP + size correction
 
 ##SMB
-smb_tp_aov<- lm(tp_2~Water*TLEN, data=bigdat, subset=(TAXON=="SMB"))
+smb_tp_aov<- lm(tp_2~Water*TLEN, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_aov)
 
 smb_tp<-emmeans(smb_tp_aov, pairwise ~ Water, adjust = "none")
@@ -266,7 +239,7 @@ SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   theme_bw()
 
 #YP
-yp_tp_aov<- lm(tp_2~Water*TLEN, data=bigdat, subset=(TAXON=="YPERCH"))
+yp_tp_aov<- lm(tp_2~Water*TLEN, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_aov)
 
 yp_tp<-emmeans(yp_tp_aov, pairwise ~ Water, adjust = "none")
@@ -304,7 +277,7 @@ TPFig<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON,
   theme_bw() +
   theme(axis.text.x = element_text())
 
-TPFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
+TPFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
 
 ```
 
@@ -335,13 +308,13 @@ CJFAS_CN +
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
-TLENdat <- bigdat %>%
+TLENdat <- data %>%
   group_by(Water, TAXON) %>%
   summarise(TLEN_mean = mean(TLEN), TLEN_sd = sd(TLEN))
 
-bigdat <- merge(bigdat, TLENdat, by = c("Water", "TAXON"))
+data <- merge(data, TLENdat, by = c("Water", "TAXON"))
 
-TLENFig<-ggplot(subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN_mean, colour = TAXON, group = TAXON)) +
+TLENFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN_mean, colour = TAXON, group = TAXON)) +
   geom_point() +
   geom_errorbar(aes(ymax = TLEN_mean + TLEN_sd, ymin = TLEN_mean - TLEN_sd)) +
   xlab("Fish species") +
@@ -353,7 +326,7 @@ TLENFig<-ggplot(subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y 
   theme_bw() +
   theme(axis.text.x = element_text())
 
-TLENFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN), shape = 1)
+TLENFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN), shape = 1)
 
 ```
 
@@ -367,7 +340,7 @@ TLENFig + geom_point(data = subset(bigdat, TAXON %in% c("YPERCH", "SMB")), aes(x
 #################
 
 ##SUBSETTING DATA
-sumCN <- bigdat %>%
+sumCN <- data %>%
   group_by(Water, TAXON) %>%
   summarise(mean.CN = mean(C.N), sd.CN = sd(C.N), mean.flen = mean(FLEN), sd.flen = sd(FLEN), mean.rwt = mean(RWT), sd.rwt = sd(RWT), mean.tlen = mean(TLEN), sd.tlen = sd(TLEN))
 
@@ -385,7 +358,7 @@ ggplot(subset(sumCN, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.CN,
   theme(axis.text.x = element_text(angle = 45))
 
 #C:N ANOVA
-data_CN <- bigdat[,c(1:3,6)]
+data_CN <- data[,c(1:3,6)]
 data_CN_YP <- data_CN[data_CN$TAXON == "YPERCH",]
 data_CN_SMB <- data_CN[data_CN$TAXON == "SMB",]
 
@@ -400,12 +373,12 @@ TukeyHSD(smb_cn_aov, which = "Water")
 #################
 ##   FI MEAN   ##
 #################
-#add FI to 'bigdat'
-bigdat$FI <- NA
-bigdat$FI <- ifelse(is.na(bigdat$FLEN), (bigdat$RWT/(bigdat$TLEN^3)) * 100000, (bigdat$RWT/(bigdat$FLEN^3)) * 100000)
+#add FI to 'data'
+data$FI <- NA
+data$FI <- ifelse(is.na(data$FLEN), (data$RWT/(data$TLEN^3)) * 100000, (data$RWT/(data$FLEN^3)) * 100000)
 
 ##SUBSETTING DATA
-FIdat <- bigdat[!is.na(bigdat$FI),]
+FIdat <- data[!is.na(data$FI),]
 sumFI <- FIdat %>%
   group_by(Water, TAXON) %>%
   summarise(mean.FI = mean(FI), sd.FI = sd(FI))
@@ -424,7 +397,7 @@ ggplot(subset(sumFI, TAXON %in% c("SMB","YPERCH")), aes(x = TAXON, y = mean.FI, 
 
 #FI ANOVA
 #subsetting for FI by spp.
-data_FI <- bigdat[,c(1:3,27)]
+data_FI <- data[,c(1:3,27)]
 data_FI_YP <- data_FI[data_FI$TAXON == "YPERCH",]
 data_FI_SMB <- data_FI[data_FI$TAXON == "SMB",]
 
