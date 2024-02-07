@@ -24,14 +24,12 @@ data <- read_csv("../data/Dawson-Isotopes-StudyLakes.csv")
 
 ###Adding new lakes from Johnston
 new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb06.csv")
-
 new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Check, Comments)) %>%
           rename("SIASAM" = "SIA SAM",
                "Water" = "WBY",
                "d13C" = "Del 13C",
                "d15N" = "Del 15N",
-               "C.N" = "C/N") %>%
-          select(Water, TAXON, SIASAM, d13C, d15N, C.N, everything())
+               "C.N" = "C/N")
 new_dat$Water[new_dat$Water == "Manitou-2"] <- "Manitou"
 
 ###Stitching
@@ -153,25 +151,23 @@ data$TAXON <- as.factor(data$TAXON)
 # SMB #
 #######
 #ANOVA w/ only sig. variables - length significant interaction
-smb_pl_mod<- lm(adjp_lit~Water*length, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
-#contrasts - use '|' ?
-smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water|length, adjust = "none")
+#contrasts
+smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
 smb_pl_em
-
+#letters
+mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
+#df
 x<-as.data.frame(summary(smb_pl_em)$emmeans)
-
-#test letters - fail
-#mod_means <- multcomp::cld(object = smb_pl_em$emmeans,Letters = letters)
-
-
+x<-merge(x,mod_means)
 #plot
 SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
-  geom_point()+
-  ylab("SMB P.Lit Water*length +/- 95% CI") +  
+  geom_point() +
+  ylab("SMB P.Lit Water*length +/- 95% CI") + 
+  geom_text(aes(label=.group), vjust = -3.0) +
   theme_bw()
-#SMB_PL_length + geom_pwc(aes(group = Water), tip.length = 0, method = "emmeans", label = "p.format", bracket.nudge.y = -0.08)
 
 ########
 ## YP ##
@@ -180,16 +176,18 @@ SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
 yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
-YP_PL<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
-YP_PL
-
-x1<-as.data.frame(summary(YP_PL)$emmeans)
-
+yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
+yp_pl_em
+#letters
+mod_means <- cld(yp_pl_em, alpha = 0.05, Letters = letters)
+x1<-as.data.frame(summary(yp_pl_em)$emmeans)
+x1<-merge(x1,mod_means)
 #plot
 YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
   ylab("YP P.Lit Water+length +/- 95% CI") +  
+  geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
 #####################
@@ -199,19 +197,21 @@ YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
 #######
 # SMB #
 #######
-smb_tp_mod<- lm(tp_2~Water + length, data=data, subset=(TAXON=="SMB"))
+smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
-
+#contrasts
 smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
-
+#letters
+mod_means <- cld(smb_tp, alpha = 0.05, Letters = letters)
 x2<-as.data.frame(summary(smb_tp)$emmeans)
-
+x2<-merge(x2,mod_means)
 #plot - need to force Y scale the same
 SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB TP Water+length +/- 95% CI") +  
+  ylab("SMB TP Water*length +/- 95% CI") + 
+  geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
 ########
@@ -219,22 +219,25 @@ SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
 ########
 yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
-
+#contrasts
 yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
 yp_tp
-
+#letters
+mod_means <- cld(yp_tp, alpha = 0.05, Letters = letters)
 x3<-as.data.frame(summary(yp_tp)$emmeans)
-
+x3<-merge(x3,mod_means)
 #plot - need to force Y scale the same
 YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP TP +/- 95% CI") +  
+  ylab("YP TP +/- 95% CI") +
+  geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
 ##4 panel plot
-plot_grid(SMB_PL_length, YP_PL, SMB_TP_size, YP_TP_size, labels = "AUTO")
+plot_grid(SMB_PL_length, YP_PL_length, SMB_TP_size, YP_TP_size, labels = "AUTO")
 
+#rm(smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
