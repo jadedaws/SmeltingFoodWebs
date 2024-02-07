@@ -32,6 +32,7 @@ new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Chec
                "d15N" = "Del 15N",
                "C.N" = "C/N") %>%
           select(Water, TAXON, SIASAM, d13C, d15N, C.N, everything())
+new_dat$Water[new_dat$Water == "Manitou-2"] <- "Manitou"
 
 ###Stitching
 cols.num <- c("d13C","d15N", "C.N", "FLEN", "TLEN", "RWT")
@@ -134,43 +135,9 @@ data <- merge(data, data_sum_tp, by = c("Water", "TAXON"))
 rm(data_sum_tp)
 ```
 
-```{r Proportion Littoral plot - CJFAS Fig 4}
-
-smbyplab <- c("Smallmouth bass", "Yellow perch")
-
-##MEAN +/- sd
-unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy usage +/- sd") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw()
-
-#plot(unadjpl)
-
-##CJFAS Fig 4 - Adj Prop Littoral##
-adjpl <- 
-  ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy +/- sd (adjusted)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() 
-
-adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
-
-```
-
 ```{r ANOVA/ANCOVA proportion littoral and TP w/ length}
 library(emmeans)
+library(cowplot)
 
 #######################
 ###  PROP LITTORAL  ###
@@ -181,8 +148,8 @@ data$TAXON <- as.factor(data$TAXON)
 smb_adjPL <- data %>%
   filter(grepl("SMB", TAXON))
 
-###ANOVA w/ only sig. variables - FLEN insig.
-smb_pl_aov<-lm(adjp_lit ~ Water, data = smb_adjPL)
+###ANOVA w/ only sig. variables - TLEN insig.
+smb_pl_aov<-lm(adjp_lit ~ Water*TLEN, data = smb_adjPL)
 anova(smb_pl_aov)
 ###contrasts
 smb_pl_em<-emmeans(smb_pl_aov, pairwise ~ Water, adjust = "none")
@@ -259,6 +226,39 @@ plot_grid(SMB_PL, YP_PL, SMB_TP_size, YP_TP_size, labels = "AUTO")
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
+```{r Proportion Littoral plot - CJFAS Fig 4}
+
+smbyplab <- c("Smallmouth bass", "Yellow perch")
+
+##MEAN +/- sd
+unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
+  geom_point(show.legend = FALSE) +
+  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
+  xlab("Fish species") +
+  ylab("Mean proportion littoral energy usage +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw()
+
+unadjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = p_lit), shape = 1)
+
+##CJFAS Fig 4 - Adj Prop Littoral##
+adjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
+  geom_point(show.legend = FALSE) +
+  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
+  xlab("Fish species") +
+  ylab("Mean proportion littoral energy +/- sd (adjusted)") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw() 
+
+adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
+
+```
 
 ```{r Trophic Position Plot - CJFAS Fig 2}
 
