@@ -41,7 +41,7 @@ data<- data[!is.na(data$d13C),]
 rm(new_dat)
 ```
 
-```{r Cleaning baseline data}
+```{r Cleaning data, creating variables}
 ##Subsetting data for just baselines
 base_data <- data %>%
   filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|CLAM|CRAYFISH|AMPHIPOD|HEPTAGEN", TAXON)) %>%
@@ -102,8 +102,13 @@ data$length <- (data$FLEN+data$x_diff)
 data$length <- coalesce(data$TLEN,data$length)
 data$length <- coalesce(data$length,data$FLEN)
 
+LEN_sum<- data %>%
+  group_by(Water, TAXON) %>%
+  summarise(length_mean = mean(length, na.rm=T), length_sd = sd(length, na.rm=T))
+data <- merge(data, LEN_sum, by = c("Water", "TAXON"))
+
 data  <- subset(data, select=-c(TLEN, FLEN, x_TLEN, x_FLEN, x_diff))
-rm(LEN)
+rm(LEN, LEN_sum)
 ```
 
 ```{r Proportion Littoral calculation}
@@ -249,7 +254,7 @@ YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
 ##4 panel plot
 plot_grid(SMB_PL_length, YP_PL_length, SMB_TP_size, YP_TP_size, labels = "AUTO")
 
-#rm(smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
@@ -336,11 +341,6 @@ CJFAS_CN +
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
-TLENdat <- data %>%
-  group_by(Water, TAXON) %>%
-  summarise(TLEN_mean = mean(TLEN), TLEN_sd = sd(TLEN))
-
-data <- merge(data, TLENdat, by = c("Water", "TAXON"))
 
 TLENFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN_mean, colour = TAXON, group = TAXON)) +
   geom_point() +
