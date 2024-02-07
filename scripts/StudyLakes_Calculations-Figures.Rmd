@@ -146,6 +146,7 @@ library(cowplot)
 ###  PROP LITTORAL  ###
 #######################
 library(ggpubr)
+library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
 #######
@@ -154,14 +155,15 @@ data$TAXON <- as.factor(data$TAXON)
 #ANOVA w/ only sig. variables - length significant interaction
 smb_pl_mod<- lm(adjp_lit~Water*length, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
-#contrasts
-smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
+#contrasts - use '|' ?
+smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water|length, adjust = "none")
 smb_pl_em
 
 x<-as.data.frame(summary(smb_pl_em)$emmeans)
 
-mod_means <- multcomp::cld(object = mod_means_contr$emmeans,
-                           Letters = letters)
+#test letters - fail
+#mod_means <- multcomp::cld(object = smb_pl_em$emmeans,Letters = letters)
+
 
 #plot
 SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
