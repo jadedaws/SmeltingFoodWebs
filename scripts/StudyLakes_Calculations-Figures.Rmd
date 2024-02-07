@@ -40,7 +40,7 @@ new_dat[cols.num] <- sapply(new_dat[cols.num],as.numeric)
 data <- bind_rows(data, new_dat)
 data<- data[!is.na(data$d13C),]
 
-rm(size_dat, new_dat)
+rm(new_dat)
 ```
 
 ```{r Cleaning baseline data}
@@ -88,6 +88,9 @@ rm(d13C, d15N, base_data)
 ##Remove baseline entries
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|CRAYFISH|CLAM|SNAIL|AMPHIPOD", TAXON))
+
+##Combining TLEN and FLEN for common length field
+data$length <- coalesce(data$TLEN,data$FLEN)
 ```
 
 ```{r Proportion Littoral calculation}
@@ -142,86 +145,93 @@ library(cowplot)
 #######################
 ###  PROP LITTORAL  ###
 #######################
-
-##SMB adj prop littoral data
+library(ggpubr)
 data$TAXON <- as.factor(data$TAXON)
-smb_adjPL <- data %>%
-  filter(grepl("SMB", TAXON))
 
-###ANOVA w/ only sig. variables - TLEN insig.
-smb_pl_aov<-lm(adjp_lit ~ Water*TLEN, data = smb_adjPL)
-anova(smb_pl_aov)
-###contrasts
-smb_pl_em<-emmeans(smb_pl_aov, pairwise ~ Water, adjust = "none")
+#######
+# SMB #
+#######
+#ANOVA w/ only sig. variables - length significant interaction
+smb_pl_mod<- lm(adjp_lit~Water*length, data=data, subset=(TAXON=="SMB"))
+anova(smb_pl_mod)
+#contrasts
+smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
 smb_pl_em
 
 x<-as.data.frame(summary(smb_pl_em)$emmeans)
 
-SMB_PL<-ggplot(x, aes(x=Water, y=emmean))+
+mod_means <- multcomp::cld(object = mod_means_contr$emmeans,
+                           Letters = letters)
+
+#plot
+SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB Prop Litt +/- 95% CI") +  
+  ylab("SMB P.Lit Water*length +/- 95% CI") +  
   theme_bw()
+#SMB_PL_length + geom_pwc(aes(group = Water), tip.length = 0, method = "emmeans", label = "p.format", bracket.nudge.y = -0.08)
 
-##YP adj prop littoral data
-yp_adjPL <- data %>%
-  filter(grepl("YP", TAXON))
+########
+## YP ##
+########
+#ANOVA w/ only sig. variables - length significant. 
+yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
+anova(yp_pl_mod)
+#ANCOVA w/ length interaction + contrasts
+YP_PL<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
+YP_PL
 
-###ANOVA w/ only sig. variables - TLEN insig. Used TLEN because more data.
-yp_pl_aov<-lm(adjp_lit ~ Water*TLEN, data = yp_adjPL)
-anova(yp_pl_aov)
+x1<-as.data.frame(summary(YP_PL)$emmeans)
 
-###ANCOVA w/ TLEN interaction
-YP_PLTLEN<-emmeans(yp_pl_aov, pairwise ~ Water, adjust = "none")
-YP_PLTLEN
-
-x1<-as.data.frame(summary(YP_PLTLEN)$emmeans)
-
-#plot for PL adj
-YP_PL<-ggplot(x1, aes(x=Water, y=emmean))+
+#plot
+YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP Prop Litt  +/- 95% CI") +  
+  ylab("YP P.Lit Water+length +/- 95% CI") +  
   theme_bw()
 
 #####################
 ###      TP       ###
 #####################
-##TP + size correction
 
-##SMB
-smb_tp_aov<- lm(tp_2~Water*TLEN, data=data, subset=(TAXON=="SMB"))
-anova(smb_tp_aov)
+#######
+# SMB #
+#######
+smb_tp_mod<- lm(tp_2~Water + length, data=data, subset=(TAXON=="SMB"))
+anova(smb_tp_mod)
 
-smb_tp<-emmeans(smb_tp_aov, pairwise ~ Water, adjust = "none")
+smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
 
 x2<-as.data.frame(summary(smb_tp)$emmeans)
 
-#plot for SMB TP with body size correction - need to force Y scale the same
+#plot - need to force Y scale the same
 SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB TP +/- 95% CI") +  
+  ylab("SMB TP Water+length +/- 95% CI") +  
   theme_bw()
 
-#YP
-yp_tp_aov<- lm(tp_2~Water*TLEN, data=data, subset=(TAXON=="YPERCH"))
-anova(yp_tp_aov)
+########
+## YP ##
+########
+yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
+anova(yp_tp_mod)
 
-yp_tp<-emmeans(yp_tp_aov, pairwise ~ Water, adjust = "none")
+yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
 yp_tp
 
 x3<-as.data.frame(summary(yp_tp)$emmeans)
 
-#plot for YP TP with body size correction - need to force Y scale the same
+#plot - need to force Y scale the same
 YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
   ylab("YP TP +/- 95% CI") +  
   theme_bw()
 
-plot_grid(SMB_PL, YP_PL, SMB_TP_size, YP_TP_size, labels = "AUTO")
+##4 panel plot
+plot_grid(SMB_PL_length, YP_PL, SMB_TP_size, YP_TP_size, labels = "AUTO")
 
 ```
 ##Range info for TP and PL needed for CJFAS body text
@@ -300,6 +310,7 @@ CJFAS_CN<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, g
   theme_classic(base_size = 14) +
   facet_wrap(~Water)
 
+#need to change colour values
 CJFAS_CN + 
   scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
   scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
