@@ -96,20 +96,20 @@ LEN <- LEN %>%
   group_by(TAXON) %>%
   summarize(x_TLEN = mean(TLEN), x_FLEN = mean(FLEN))
 LEN$x_diff <- LEN$x_TLEN - LEN$x_FLEN
-##it WORKS now tidy
-test<-left_join(data,LEN,keep=F)
-test<- subset(test, select=-c(x_FLEN, x_TLEN))
-test$length1 <- (test$FLEN+test$x_diff)
-test$length <- coalesce(test$TLEN,test$length1)
-test$length <- coalesce(test$length,test$FLEN)
 
-data$length <- coalesce(data$TLEN,data$FLEN)
+data<-left_join(data,LEN,keep=F)
+data$length <- (data$FLEN+data$x_diff)
+data$length <- coalesce(data$TLEN,data$length)
+data$length <- coalesce(data$length,data$FLEN)
+
+data  <- subset(data, select=-c(TLEN, FLEN, x_TLEN, x_FLEN, x_diff))
+rm(LEN)
 ```
 
 ```{r Proportion Littoral calculation}
 data$p_lit <- (data$d13C - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
 
-#rough plotting
+#plotting
 hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
 
 smbyp_CN<-ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = d13C, y = d15N, colour = TAXON, group = TAXON)) +
@@ -126,10 +126,8 @@ data$adjp_lit[data$p_lit<0] <- 0.00
 hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
 
 rm(smbyp_CN)
-```
 
-```{r Summarizing prop littoral for data}
-#data summary for creating 'data'
+#summarize pl by water + taxon
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
@@ -142,7 +140,7 @@ rm(data_sum)
 # two baseline
 data$tp_2 <- 2 + ((data$d15N - ((data$d15N_pel*(1 - data$p_lit)) + (data$d15N_lit*data$p_lit)))/3.4)
 
-#summarize tp by species
+#summarize tp by water + taxon
 data_sum_tp <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.tp2 = mean(tp_2), sd.tp2 = sd(tp_2))
 #add to df
@@ -152,21 +150,20 @@ rm(data_sum_tp)
 ```
 
 ```{r ANOVA/ANCOVA proportion littoral and TP w/ length}
-library(emmeans)
-library(cowplot)
 
 #######################
 ###  PROP LITTORAL  ###
 #######################
-library(ggpubr)
+library(emmeans)
+library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
 #######
 # SMB #
 #######
-#ANOVA w/ only sig. variables - length significant interaction
-smb_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="SMB"))
+#ANOVA w/ only sig. variables
+smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
 smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
@@ -180,7 +177,7 @@ x<-merge(x,mod_means)
 SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point() +
-  ylab("SMB P.Lit Water*length +/- 95% CI") + 
+  ylab("SMB adjp_lit~Water +/- 95% CI") + 
   geom_text(aes(label=.group), vjust = -3.0) +
   theme_bw()
 
@@ -201,7 +198,7 @@ x1<-merge(x1,mod_means)
 YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP P.Lit Water+length +/- 95% CI") +  
+  ylab("YP adjp_lit~Water+length +/- 95% CI") +  
   geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
@@ -225,7 +222,7 @@ x2<-merge(x2,mod_means)
 SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("SMB TP Water*length +/- 95% CI") + 
+  ylab("SMB TP_Water+length +/- 95% CI") + 
   geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
@@ -245,7 +242,7 @@ x3<-merge(x3,mod_means)
 YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
-  ylab("YP TP +/- 95% CI") +
+  ylab("YP TP~Water+length +/- 95% CI") +
   geom_text(aes(label=.group), vjust = -2.0) +
   theme_bw()
 
