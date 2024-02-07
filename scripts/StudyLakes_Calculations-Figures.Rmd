@@ -88,6 +88,21 @@ data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|CRAYFISH|CLAM|SNAIL|AMPHIPOD", TAXON))
 
 ##Combining TLEN and FLEN for common length field
+#mean diff TLEN - FLEN
+LEN <- subset(data, select=c(Water,TAXON,FLEN,TLEN)) %>%
+  #filter(grepl("SMB|YPERCH", TAXON)) %>%
+  na.omit()
+LEN <- LEN %>%
+  group_by(TAXON) %>%
+  summarize(x_TLEN = mean(TLEN), x_FLEN = mean(FLEN))
+LEN$x_diff <- LEN$x_TLEN - LEN$x_FLEN
+##it WORKS now tidy
+test<-left_join(data,LEN,keep=F)
+test<- subset(test, select=-c(x_FLEN, x_TLEN))
+test$length1 <- (test$FLEN+test$x_diff)
+test$length <- coalesce(test$TLEN,test$length1)
+test$length <- coalesce(test$length,test$FLEN)
+
 data$length <- coalesce(data$TLEN,data$FLEN)
 ```
 
