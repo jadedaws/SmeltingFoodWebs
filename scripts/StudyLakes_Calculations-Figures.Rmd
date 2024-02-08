@@ -184,10 +184,13 @@ mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
 #df
 x<-as.data.frame(summary(smb_pl_em)$emmeans)
 x<-merge(x,mod_means)
+x$.group<-gsub("[[:space:]]", "", x$.group)
+
 #plot
 SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point() +
+  ylim(-0.1,1.2) +
   ylab("SMB adjp_lit~Water +/- 95% CI") + 
   geom_text(aes(label=.group), vjust = -3.0) +
   theme_bw()
@@ -205,12 +208,14 @@ yp_pl_em
 mod_means <- cld(yp_pl_em, alpha = 0.05, Letters = letters)
 x1<-as.data.frame(summary(yp_pl_em)$emmeans)
 x1<-merge(x1,mod_means)
+x1$.group<-gsub("[[:space:]]", "", x1$.group)
 #plot
 YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
+  ylim(-0.1,1.2) +
   ylab("YP adjp_lit~Water+length +/- 95% CI") +  
-  geom_text(aes(label=.group), vjust = -2.0) +
+  geom_text(aes(label=.group), vjust = -3) +
   theme_bw()
 
 #####################
@@ -229,12 +234,14 @@ smb_tp
 mod_means <- cld(smb_tp, alpha = 0.05, Letters = letters)
 x2<-as.data.frame(summary(smb_tp)$emmeans)
 x2<-merge(x2,mod_means)
+x2$.group<-gsub("[[:space:]]", "", x2$.group)
 #plot - need to force Y scale the same
 SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
+  ylim(2.9,4.25) +
   ylab("SMB TP_Water+length +/- 95% CI") + 
-  geom_text(aes(label=.group), vjust = -2.0) +
+  geom_text(aes(label=.group), vjust = -2.5) +
   theme_bw()
 
 ########
@@ -249,18 +256,20 @@ yp_tp
 mod_means <- cld(yp_tp, alpha = 0.05, Letters = letters)
 x3<-as.data.frame(summary(yp_tp)$emmeans)
 x3<-merge(x3,mod_means)
+x3$.group<-gsub("[[:space:]]", "", x3$.group)
 #plot - need to force Y scale the same
 YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
+  ylim(2.9,4.25) +
   ylab("YP TP~Water+length +/- 95% CI") +
-  geom_text(aes(label=.group), vjust = -2.0) +
+  geom_text(aes(label=.group), vjust = -4.25) +
   theme_bw()
 
 ##4 panel plot
 plot_grid(SMB_PL_length, YP_PL_length, SMB_TP_size, YP_TP_size, labels = "AUTO")
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
+#rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
