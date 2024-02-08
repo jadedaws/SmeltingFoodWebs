@@ -118,7 +118,8 @@ rm(LEN, LEN_sum)
 ```
 
 ```{r Proportion Littoral calculation}
-data$p_lit <- (data$d13C - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
+data$d13C_norm <- data$d13C + (-3.32 + (0.99*data$C.N))
+data$p_lit <- (data$d13C_norm - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
 
 #plotting
 hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
@@ -170,29 +171,47 @@ library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
+#Water<-c("Baby Lk.", "Daisy Lk.", "Nelson Lk.", "Manitou", "Mendelssohn", "Stormy", "Turtleshell", "Wawiashkashi")
+#size<-c(11.9, 36.1, 308.8, 322.1, 460.5, 333.4, 161.1, 414.4)
+#ls <- data.frame(Water,size)
+
+data <- data %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  ))
+
 #######
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(adjp_lit~Water + length, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
 smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
 smb_pl_em
 #letters
-mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
+#mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
 #df
 x<-as.data.frame(summary(smb_pl_em)$emmeans)
-x<-merge(x,mod_means)
-x$.group<-gsub("[[:space:]]", "", x$.group)
+x <- x %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  )) %>%
+  group_by(Water2) %>%
+  summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 
+#x<-merge(x,mod_means)
+#x$.group<-gsub("[[:space:]]", "", x$.group)
+#x <- merge(x, ls)
 #plot
-SMB_PL_length<-ggplot(x, aes(x=Water, y=emmean))+
-  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point() +
   ylim(-0.1,1.2) +
   ylab("SMB adjp_lit~Water +/- 95% CI") + 
-  geom_text(aes(label=.group), vjust = -3.0) +
+  #geom_text(aes(label=.group), vjust = -3.0) +
   theme_bw()
 
 ########
@@ -205,17 +224,25 @@ anova(yp_pl_mod)
 yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
 yp_pl_em
 #letters
-mod_means <- cld(yp_pl_em, alpha = 0.05, Letters = letters)
+#mod_means <- cld(yp_pl_em, alpha = 0.05, Letters = letters)
 x1<-as.data.frame(summary(yp_pl_em)$emmeans)
-x1<-merge(x1,mod_means)
-x1$.group<-gsub("[[:space:]]", "", x1$.group)
+x1 <- x1 %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  )) %>%
+  group_by(Water2) %>%
+  summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
+
+#x1<-merge(x1,mod_means)
+#x1$.group<-gsub("[[:space:]]", "", x1$.group)
 #plot
-YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
-  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
   ylim(-0.1,1.2) +
-  ylab("YP adjp_lit~Water+length +/- 95% CI") +  
-  geom_text(aes(label=.group), vjust = -3) +
+  ylab("YP adjp_lit~Water2+length +/- 95% CI") +  
+  #geom_text(aes(label=.group), vjust = -3) +
   theme_bw()
 
 #####################
@@ -225,10 +252,10 @@ YP_PL_length<-ggplot(x1, aes(x=Water, y=emmean))+
 #######
 # SMB #
 #######
-smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
+smb_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
 #contrasts
-smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
+smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water2, adjust = "none")
 smb_tp
 #letters
 mod_means <- cld(smb_tp, alpha = 0.05, Letters = letters)
@@ -236,21 +263,21 @@ x2<-as.data.frame(summary(smb_tp)$emmeans)
 x2<-merge(x2,mod_means)
 x2$.group<-gsub("[[:space:]]", "", x2$.group)
 #plot - need to force Y scale the same
-SMB_TP_size<-ggplot(x2, aes(x=Water, y=emmean))+
+SMB_TP_size<-ggplot(x2, aes(x=Water2, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
   ylim(2.9,4.25) +
-  ylab("SMB TP_Water+length +/- 95% CI") + 
+  ylab("SMB TP_Water2+length +/- 95% CI") + 
   geom_text(aes(label=.group), vjust = -2.5) +
   theme_bw()
 
 ########
 ## YP ##
 ########
-yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
+yp_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
 #contrasts
-yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
+yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water2, adjust = "none")
 yp_tp
 #letters
 mod_means <- cld(yp_tp, alpha = 0.05, Letters = letters)
@@ -258,11 +285,11 @@ x3<-as.data.frame(summary(yp_tp)$emmeans)
 x3<-merge(x3,mod_means)
 x3$.group<-gsub("[[:space:]]", "", x3$.group)
 #plot - need to force Y scale the same
-YP_TP_size<-ggplot(x3, aes(x=Water, y=emmean))+
+YP_TP_size<-ggplot(x3, aes(x=Water2, y=emmean))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
   geom_point()+
   ylim(2.9,4.25) +
-  ylab("YP TP~Water+length +/- 95% CI") +
+  ylab("YP TP~Water2+length +/- 95% CI") +
   geom_text(aes(label=.group), vjust = -4.25) +
   theme_bw()
 
