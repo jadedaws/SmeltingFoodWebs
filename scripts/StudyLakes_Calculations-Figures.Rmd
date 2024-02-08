@@ -106,8 +106,14 @@ LEN_sum<- data %>%
   group_by(Water, TAXON) %>%
   summarise(length_mean = mean(length, na.rm=T), length_sd = sd(length, na.rm=T))
 data <- merge(data, LEN_sum, by = c("Water", "TAXON"))
-
 data  <- subset(data, select=-c(TLEN, FLEN, x_TLEN, x_FLEN, x_diff))
+
+SI<- data%>%
+  group_by(Water, TAXON) %>%
+  summarise(d13C_mean = mean(d13C), d13C_sd = sd(d13C), d13C_max = max(d13C), d13C_min = min(d13C), d15N_mean = mean(d15N), d15N_sd = sd(d15N), d15N_max = max(d15N), d15N_min = min(d15N))
+SI$d13Crange <- SI$d13C_max-SI$d13C_min
+SI$d15Nrange <- SI$d15N_max-SI$d15N_min
+  
 rm(LEN, LEN_sum)
 ```
 
@@ -342,9 +348,9 @@ CJFAS_CN +
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
 
-TLENFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN_mean, colour = TAXON, group = TAXON)) +
+LengthFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length_mean, colour = TAXON, group = TAXON)) +
   geom_point() +
-  geom_errorbar(aes(ymax = TLEN_mean + TLEN_sd, ymin = TLEN_mean - TLEN_sd)) +
+  geom_errorbar(aes(ymax = length_mean + length_sd, ymin = length_mean - length_sd)) +
   xlab("Fish species") +
   ylab("Mean Total Length +/- sd (mm)") +
   scale_y_continuous() +
@@ -354,7 +360,7 @@ TLENFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = 
   theme_bw() +
   theme(axis.text.x = element_text())
 
-TLENFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = TLEN), shape = 1)
+LengthFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length), shape = 1)
 
 ```
 
