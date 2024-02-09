@@ -118,13 +118,14 @@ rm(LEN, LEN_sum)
 ```
 
 ```{r Proportion Littoral calculation}
+#lipid correction d13C
 data$d13C_norm <- data$d13C + (-3.32 + (0.99*data$C.N))
+#prop lit
 data$p_lit <- (data$d13C_norm - data$d13C_pel)/(data$d13C_lit - data$d13C_pel)
-
 #plotting
 hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
 
-smbyp_CN<-ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = d13C, y = d15N, colour = TAXON, group = TAXON)) +
+smbyp_CN<-ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = d13C_norm, y = d15N, colour = TAXON, group = TAXON)) +
   geom_point(show.legend = FALSE) +
   facet_wrap(~Water)
 smbyp_CN + geom_point(aes(x = d13C_lit, y = d15N_lit, colour = "littoral")) +
@@ -162,7 +163,6 @@ rm(data_sum_tp)
 ```
 
 ```{r ANOVA/ANCOVA proportion littoral and TP w/ length}
-
 #######################
 ###  PROP LITTORAL  ###
 #######################
@@ -185,7 +185,7 @@ data <- data %>%
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(adjp_lit~Water + length, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
 smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
@@ -201,6 +201,7 @@ x <- x %>%
   )) %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
+x$TAXON<-"SMB"
 
 #x<-merge(x,mod_means)
 #x$.group<-gsub("[[:space:]]", "", x$.group)
@@ -210,21 +211,19 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point() +
   ylim(-0.1,1.2) +
-  ylab("SMB adjp_lit~Water +/- 95% CI") + 
-  #geom_text(aes(label=.group), vjust = -3.0) +
+  ylab("SMB Proportion Littoral") + 
   theme_bw()
 
 ########
 ## YP ##
 ########
-#ANOVA w/ only sig. variables - length significant. 
+#ANOVA - length significant. 
 yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
 yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
 yp_pl_em
-#letters
-#mod_means <- cld(yp_pl_em, alpha = 0.05, Letters = letters)
+#grand mean
 x1<-as.data.frame(summary(yp_pl_em)$emmeans)
 x1 <- x1 %>%
   mutate(Water2 = case_when(
@@ -233,16 +232,24 @@ x1 <- x1 %>%
   )) %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
+x1$TAXON <- "YPERCH"
 
-#x1<-merge(x1,mod_means)
-#x1$.group<-gsub("[[:space:]]", "", x1$.group)
 #plot
 YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
   ylim(-0.1,1.2) +
-  ylab("YP adjp_lit~Water2+length +/- 95% CI") +  
-  #geom_text(aes(label=.group), vjust = -3) +
+  ylab("YP Proportion Littoral") +  
+  theme_bw()
+
+#stitch together PL plot df
+PL_gm <- full_join(x,x1)
+#plot
+PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
+  geom_point()+
+  ylim(0,1.1) +
+  ylab("Proportion Littoral") +  
   theme_bw()
 
 #####################
@@ -252,49 +259,68 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 #######
 # SMB #
 #######
-smb_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="SMB"))
+smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
 #contrasts
-smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water2, adjust = "none")
+smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
-#letters
-mod_means <- cld(smb_tp, alpha = 0.05, Letters = letters)
+#grand mean
 x2<-as.data.frame(summary(smb_tp)$emmeans)
-x2<-merge(x2,mod_means)
-x2$.group<-gsub("[[:space:]]", "", x2$.group)
-#plot - need to force Y scale the same
-SMB_TP_size<-ggplot(x2, aes(x=Water2, y=emmean))+
-  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+x2 <- x2 %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  )) %>%
+  group_by(Water2) %>%
+  summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
+x2$TAXON<-"SMB"
+#plot
+SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
   ylim(2.9,4.25) +
-  ylab("SMB TP_Water2+length +/- 95% CI") + 
-  geom_text(aes(label=.group), vjust = -2.5) +
+  ylab("SMB Trophic Position") + 
   theme_bw()
 
 ########
 ## YP ##
 ########
-yp_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="YPERCH"))
+yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
 #contrasts
-yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water2, adjust = "none")
+yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
 yp_tp
-#letters
-mod_means <- cld(yp_tp, alpha = 0.05, Letters = letters)
+#grand mean
 x3<-as.data.frame(summary(yp_tp)$emmeans)
-x3<-merge(x3,mod_means)
-x3$.group<-gsub("[[:space:]]", "", x3$.group)
+x3 <- x3 %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  )) %>%
+  group_by(Water2) %>%
+  summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
+x3$TAXON<-"YPERCH"
 #plot - need to force Y scale the same
-YP_TP_size<-ggplot(x3, aes(x=Water2, y=emmean))+
-  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.2)+
+YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
   ylim(2.9,4.25) +
-  ylab("YP TP~Water2+length +/- 95% CI") +
-  geom_text(aes(label=.group), vjust = -4.25) +
+  ylab("YP Trophic Position") +
   theme_bw()
 
+#stitch as df
+TP_gm<-full_join(x2,x3)
+#plot
+TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
+  geom_point()+
+  ylim(2.9,4.1)+
+  ylab("Trophic Position")+
+  theme_bw()
+##FIX
+TP <- TP1 + geom_ribbon(subset(TP_gm, Water2 %in% "Reference"), aes(ymin=glower.CL,ymax=gupper.CL, fill = factor(TAXON)),alpha=0.3)
 ##4 panel plot
-plot_grid(SMB_PL_length, YP_PL_length, SMB_TP_size, YP_TP_size, labels = "AUTO")
+plot_grid(PL, TP, labels = "AUTO")
 
 #rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
 ```
