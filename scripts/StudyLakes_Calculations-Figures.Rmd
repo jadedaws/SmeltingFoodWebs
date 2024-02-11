@@ -318,11 +318,12 @@ TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
   ylab("Trophic Position")+
   theme_bw()
 ##FIX
-TP <- TP1 + geom_ribbon(subset(TP_gm, Water2 %in% "Reference"), aes(ymin=glower.CL,ymax=gupper.CL, fill = factor(TAXON)),alpha=0.3)
+refTP_gm<-subset(TP_gm, Water2 %in% "Reference")
+TP <- TP1 + geom_ribbon(refTP_gm, aes(ymin=glower.CL,ymax=gupper.CL, fill = factor(TAXON)),alpha=0.3)
 ##4 panel plot
-plot_grid(PL, TP, labels = "AUTO")
+plot_grid(PL, TP1, labels = "AUTO")
 
-#rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
+#rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means, x, x1, x2, x3)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
