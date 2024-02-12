@@ -202,6 +202,7 @@ x <- x %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x$TAXON<-"SMB"
+x<-as.data.frame(x)
 
 #x<-merge(x,mod_means)
 #x$.group<-gsub("[[:space:]]", "", x$.group)
@@ -233,6 +234,7 @@ x1 <- x1 %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x1$TAXON <- "YPERCH"
+x1<-as.data.frame(x1)
 
 #plot
 YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
@@ -244,23 +246,29 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
+PL_gm$colour<-"#999999"
+PL_gm$colour[PL_gm$TAXON=="YPERCH"] <- "#E69F00"
 refPL_gm <- subset(PL_gm, Water2 %in% "Reference")
 #plot
 lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake")
 
 PL1<-ggplot(subset(PL_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2, show.legend=F)+
   geom_point()+
   ylim(0,1.1) +
-  ylab("Proportion Littoral") +  
+  ylab("Proportion Littoral") + 
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#999999", "#E69F00")) +
   theme_bw()
 
 #w reference CI
 PL<- PL1+
-  geom_rect(data = refPL_gm, aes(ymin = glower.CL, ymax = gupper.CL, fill=TAXON), xmin = -Inf, xmax = Inf, alpha = 0.25) +
   geom_hline(data = refPL_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd=1.1)+
      theme(axis.title.x = element_blank()) +
-  xlim('Baby Lk.', 'Daisy Lk.', 'Nelson Lk.')
+  geom_rect(data = refPL_gm, aes(ymin = glower.CL, ymax = gupper.CL), fill=refPL_gm$colour, xmin = -Inf, xmax = Inf, alpha = 0.2) +
+  scale_fill_manual(values = c("Smallmouth bass" = "#999999",
+                               "Yellow perch" = "#E69F00"), guide = "none")+
+   theme(axis.title.x = element_blank()) +
+  scale_x_discrete(labels = lakelab, limits = c('Baby Lk.','Daisy Lk.','Nelson Lk.'))
 
 #####################
 ###      TP       ###
@@ -284,6 +292,7 @@ x2 <- x2 %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x2$TAXON<-"SMB"
+x2<-as.data.frame(x2)
 #plot
 SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
@@ -310,7 +319,8 @@ x3 <- x3 %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x3$TAXON<-"YPERCH"
-#plot - need to force Y scale the same
+x3<-as.dataframe(x3)
+#plot
 YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
@@ -320,86 +330,45 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
 
 #stitch as df
 TP_gm<-full_join(x2,x3)
+TP_gm$colour<-"#999999"
+TP_gm$colour[TP_gm$TAXON=="YPERCH"] <- "#E69F00"
 TP_gm$Water2<-as.factor(TP_gm$Water2)
 TP_gm$TAXON<-as.factor(TP_gm$TAXON)
 refTP_gm<-subset(TP_gm, Water2 %in% "Reference")
+
 #plot
 TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2,show.legend=F)+
   geom_point()+
   ylim(2.9,4.1)+
   ylab("Trophic Position")+
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#999999", "#E69F00")) +
   theme_bw()
 #w reference CI
 TP<- TP1+
-  geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd = 1.1) +
-  geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL), xmin = -Inf, xmax = Inf, alpha = 0.25) +
-  scale_fill_manual(labels = c("Smallmouth Bass", "Yellow perch"), values = c("black", "grey"))+
+  geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "Species grand mean", colour=TAXON), lwd = 1.1) +
+      scale_linetype_manual(name = "Reference Lakes", values = c(1,1))+
+  geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL), fill=refTP_gm$colour, xmin = -Inf, xmax = Inf, alpha = 0.2, show.legend=F)+
    theme(axis.title.x = element_blank()) +
   scale_x_discrete(labels = lakelab, limits = c('Baby Lk.','Daisy Lk.','Nelson Lk.'))
 
-##4 panel plot
-plot_grid(PL, TP, labels = "AUTO")
+    #scale_linetype_manual(name = "limit", values = c(2, 2), 
+                     # guide = guide_legend(override.aes = list(color = c("blue", "red"))))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means, x, x1, x2, x3)
+legend<- get_legend(TP +
+                      guides(colour = guide_legend(nrow=1)) +
+                      theme(legend.position = "bottom"))
+
+##2 panel plot
+pl2<-plot_grid(PL + theme(legend.position="none"), 
+          TP + theme(legend.position="none"), 
+          labels = "AUTO")
+
+plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
+
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
 ```
 ##Range info for TP and PL needed for CJFAS body text
-
-```{r Proportion Littoral plot - CJFAS Fig 4}
-
-smbyplab <- c("Smallmouth bass", "Yellow perch")
-
-##MEAN +/- sd
-unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy usage +/- sd") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw()
-
-unadjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = p_lit), shape = 1)
-
-##CJFAS Fig 4 - Adj Prop Littoral##
-adjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy +/- sd (adjusted)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() 
-
-adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
-
-```
-
-```{r Trophic Position Plot - CJFAS Fig 2}
-
-##CJFAS FIGURE 2 - MIXED TP ##
-smbyplab <- c("Smallmouth bass", "Yellow perch")
-
-TPFig<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (two end mixed)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text())
-
-TPFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
-
-```
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 ##Renaming some of the fish species to match each other
@@ -426,6 +395,10 @@ CJFAS_CN +
   scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
 
 
+####NEW #######
+#rename columns to specify it's all gmean for PL and TP to set up for SEA ellipses
+TP_gm <- TP_gm %>%
+  #rename columns - do same for PL
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
@@ -531,4 +504,60 @@ TukeyHSD(smb_fi_aov, which = "Water")
 ##CJFAS Supplemental Fig adj vs unadj PL##
 library(cowplot)
 plot_grid(unadjpl, adjpl, labels = "AUTO")
+```
+
+#######OLD TO REMOVE######
+```{r Proportion Littoral plot - CJFAS Fig 4}
+
+smbyplab <- c("Smallmouth bass", "Yellow perch")
+
+##MEAN +/- sd
+unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
+  geom_point(show.legend = FALSE) +
+  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
+  xlab("Fish species") +
+  ylab("Mean proportion littoral energy usage +/- sd") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw()
+
+unadjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = p_lit), shape = 1)
+
+##CJFAS Fig 4 - Adj Prop Littoral##
+adjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
+  geom_point(show.legend = FALSE) +
+  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
+  xlab("Fish species") +
+  ylab("Mean proportion littoral energy +/- sd (adjusted)") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw() 
+
+adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
+
+```
+
+```{r Trophic Position Plot - CJFAS Fig 2}
+
+##CJFAS FIGURE 2 - MIXED TP ##
+smbyplab <- c("Smallmouth bass", "Yellow perch")
+
+TPFig<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
+  geom_point() +
+  geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
+  xlab("Fish species") +
+  ylab("Mean Trophic Position +/- sd (two end mixed)") +
+  scale_y_continuous() +
+  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
+  facet_wrap(~Water)+
+  theme_bw() +
+  theme(axis.text.x = element_text())
+
+TPFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
+
 ```
