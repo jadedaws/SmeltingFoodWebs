@@ -246,6 +246,8 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 PL_gm <- full_join(x,x1)
 refPL_gm <- subset(PL_gm, Water2 %in% "Reference")
 #plot
+lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake")
+
 PL1<-ggplot(subset(PL_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
@@ -327,18 +329,20 @@ TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
   geom_point()+
   ylim(2.9,4.1)+
   ylab("Trophic Position")+
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
   theme_bw()
 #w reference CI
 TP<- TP1+
   geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd = 1.1) +
-  geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL, fill=TAXON), xmin = -Inf, xmax = Inf, alpha = 0.25) +
+  geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL), xmin = -Inf, xmax = Inf, alpha = 0.25) +
+  scale_fill_manual(labels = c("Smallmouth Bass", "Yellow perch"), values = c("black", "grey"))+
    theme(axis.title.x = element_blank()) +
-  xlim('Baby Lk.', 'Daisy Lk.', 'Nelson Lk.')
+  scale_x_discrete(labels = lakelab, limits = c('Baby Lk.','Daisy Lk.','Nelson Lk.'))
 
 ##4 panel plot
 plot_grid(PL, TP, labels = "AUTO")
 
-#rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means, x, x1, x2, x3)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means, x, x1, x2, x3)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
