@@ -244,13 +244,21 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
+refPL_gm <- subset(PL_gm, Water2 %in% "Reference")
 #plot
-PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
+PL1<-ggplot(subset(PL_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
   geom_point()+
   ylim(0,1.1) +
   ylab("Proportion Littoral") +  
   theme_bw()
+
+#w reference CI
+PL<- PL1+
+  geom_rect(data = refPL_gm, aes(ymin = glower.CL, ymax = gupper.CL, fill=TAXON), xmin = -Inf, xmax = Inf, alpha = 0.25) +
+  geom_hline(data = refPL_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd=1.1)+
+     theme(axis.title.x = element_blank()) +
+  xlim('Baby Lk.', 'Daisy Lk.', 'Nelson Lk.')
 
 #####################
 ###      TP       ###
@@ -310,6 +318,8 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
 
 #stitch as df
 TP_gm<-full_join(x2,x3)
+TP_gm$Water2<-as.factor(TP_gm$Water2)
+TP_gm$TAXON<-as.factor(TP_gm$TAXON)
 refTP_gm<-subset(TP_gm, Water2 %in% "Reference")
 #plot
 TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
@@ -320,8 +330,10 @@ TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
   theme_bw()
 #w reference CI
 TP<- TP1+
+  geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd = 1.1) +
   geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL, fill=TAXON), xmin = -Inf, xmax = Inf, alpha = 0.25) +
-  geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "gemmean", colour=TAXON))
+   theme(axis.title.x = element_blank()) +
+  xlim('Baby Lk.', 'Daisy Lk.', 'Nelson Lk.')
 
 ##4 panel plot
 plot_grid(PL, TP, labels = "AUTO")
