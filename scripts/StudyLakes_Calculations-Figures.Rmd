@@ -246,29 +246,19 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
-PL_gm$colour<-"#999999"
-PL_gm$colour[PL_gm$TAXON=="YPERCH"] <- "#E69F00"
-refPL_gm <- subset(PL_gm, Water2 %in% "Reference")
-#plot
-lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake")
 
-PL1<-ggplot(subset(PL_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2, show.legend=F)+
-  geom_point()+
+#plot
+lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")
+
+PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2, position = position_dodge(0.4),show.legend=F)+
+  geom_point(position = position_dodge(0.4))+
   ylim(0,1.1) +
   ylab("Proportion Littoral") + 
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#999999", "#E69F00")) +
-  theme_bw()
-
-#w reference CI
-PL<- PL1+
-  geom_hline(data = refPL_gm, aes(yintercept = gemmean,linetype = "Reference Lakes mean", colour=TAXON), lwd=1.1)+
-     theme(axis.title.x = element_blank()) +
-  geom_rect(data = refPL_gm, aes(ymin = glower.CL, ymax = gupper.CL), fill=refPL_gm$colour, xmin = -Inf, xmax = Inf, alpha = 0.2) +
-  scale_fill_manual(values = c("Smallmouth bass" = "#999999",
-                               "Yellow perch" = "#E69F00"), guide = "none")+
-   theme(axis.title.x = element_blank()) +
-  scale_x_discrete(labels = lakelab, limits = c('Baby Lk.','Daisy Lk.','Nelson Lk.'))
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D55E00", "#E69F00"), guide="none") +
+  theme_bw()+
+  theme(axis.title.x = element_blank())+
+  scale_x_discrete(labels = lakelab)
 
 #####################
 ###      TP       ###
@@ -319,7 +309,7 @@ x3 <- x3 %>%
   group_by(Water2) %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x3$TAXON<-"YPERCH"
-x3<-as.dataframe(x3)
+x3<-as.data.frame(x3)
 #plot
 YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
@@ -330,30 +320,17 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
 
 #stitch as df
 TP_gm<-full_join(x2,x3)
-TP_gm$colour<-"#999999"
-TP_gm$colour[TP_gm$TAXON=="YPERCH"] <- "#E69F00"
-TP_gm$Water2<-as.factor(TP_gm$Water2)
-TP_gm$TAXON<-as.factor(TP_gm$TAXON)
-refTP_gm<-subset(TP_gm, Water2 %in% "Reference")
 
 #plot
-TP1<- ggplot(subset(TP_gm, Water2 %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk.")), aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2,show.legend=F)+
-  geom_point()+
+TP<- ggplot(TP_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2,position = position_dodge(0.4),show.legend=F)+
+  geom_point(position = position_dodge(0.4))+
   ylim(2.9,4.1)+
   ylab("Trophic Position")+
-  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#999999", "#E69F00")) +
-  theme_bw()
-#w reference CI
-TP<- TP1+
-  geom_hline(data = refTP_gm, aes(yintercept = gemmean,linetype = "Species grand mean", colour=TAXON), lwd = 1.1) +
-      scale_linetype_manual(name = "Reference Lakes", values = c(1,1))+
-  geom_rect(data = refTP_gm, aes(ymin = glower.CL, ymax = gupper.CL), fill=refTP_gm$colour, xmin = -Inf, xmax = Inf, alpha = 0.2, show.legend=F)+
-   theme(axis.title.x = element_blank()) +
-  scale_x_discrete(labels = lakelab, limits = c('Baby Lk.','Daisy Lk.','Nelson Lk.'))
-
-    #scale_linetype_manual(name = "limit", values = c(2, 2), 
-                     # guide = guide_legend(override.aes = list(color = c("blue", "red"))))
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D55E00", "#E69F00")) +
+  theme_bw()+
+  theme(axis.title.x = element_blank()) +
+  scale_x_discrete(labels = lakelab)
 
 legend<- get_legend(TP +
                       guides(colour = guide_legend(nrow=1)) +
@@ -366,11 +343,37 @@ pl2<-plot_grid(PL + theme(legend.position="none"),
 
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, mod_means)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
+####NEW #######
+#rename columns to specify it's all gmean for PL and TP to set up for SEA ellipses
+TP_gm1 <- TP_gm %>%
+            rename("Water" = "Water2",
+              "TP" = "gemmean",
+               "TP.lwr.CL" = "glower.CL",
+               "TP.upr.CL" = "gupper.CL")
+PL_gm1 <- PL_gm %>%
+  rename("Water" = "Water2",
+    "PL" = "gemmean",
+         "PL.lwr.CL" = "glower.CL",
+         "PL.upr.CL" = "gupper.CL")
+sea <- full_join(TP_gm1,PL_gm1)
+sea$Water[sea$Water == "Baby Lk."] <- "Barren Lake"
+sea$Water[sea$Water == "Daisy Lk."] <- "Semi-barren Lake"
+sea$Water[sea$Water == "Nelson Lk."] <- "Forested Lake"
+sea$Water[sea$Water == "Reference"] <- "Reference Lakes"
+
+CJFAS_sea<-ggplot(sea, aes(x = PL, y = TP, colour = TAXON, group = interaction(Water, TAXON))) +
+  geom_point() +
+  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
+  theme_classic(base_size = 14) +
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D55E00", "#E69F00"))+
+  facet_wrap(~Water)
+
+##OLD##
 ##Renaming some of the fish species to match each other
 #need to do for new fish spc
 data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
@@ -394,11 +397,6 @@ CJFAS_CN +
   scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
   scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
 
-
-####NEW #######
-#rename columns to specify it's all gmean for PL and TP to set up for SEA ellipses
-TP_gm <- TP_gm %>%
-  #rename columns - do same for PL
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
