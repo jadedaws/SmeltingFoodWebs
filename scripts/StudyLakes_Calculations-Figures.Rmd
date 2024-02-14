@@ -246,6 +246,8 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
+PL_gm$letter <- c("A", "A", "B", "C", "AB", "A", "B", "A")
+
 
 #plot
 lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")
@@ -253,6 +255,8 @@ lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lake
 PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
   geom_point(size = 3, position = position_dodge(0.5))+
+  geom_text(aes(x = Water2, y = gupper.CL,label = letter, group = TAXON), 
+            position = position_dodge(width = 0.5), vjust = -0.5, colour = "black", size =5) +
   ylim(0,1.1) +
   ylab("Proportion Littoral") + 
   scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"), guide="none") +
@@ -320,11 +324,14 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
 
 #stitch as df
 TP_gm<-full_join(x2,x3)
+TP_gm$letter <- c("A", "B", "B", "B", "A", "A", "A", "A")
 
 #plot
 TP<- ggplot(TP_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
   geom_point(position = position_dodge(0.5), size = 3)+
+  geom_text(aes(x = Water2, y = gupper.CL,label = letter, group = TAXON), 
+            position = position_dodge(width = 0.5), vjust = -0.5, colour = "black", size =5) +
   ylim(2.9,4.1)+
   ylab("Trophic Position")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
@@ -349,18 +356,9 @@ rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 ####NEW #######
-#rename columns to specify it's all gmean for PL and TP to set up for SEA ellipses
-TP_gm1 <- TP_gm %>%
-            rename("Water" = "Water2",
-              "TP" = "gemmean",
-               "TP.lwr.CL" = "glower.CL",
-               "TP.upr.CL" = "gupper.CL")
-PL_gm1 <- PL_gm %>%
-  rename("Water" = "Water2",
-    "PL" = "gemmean",
-         "PL.lwr.CL" = "glower.CL",
-         "PL.upr.CL" = "gupper.CL")
-sea <- full_join(TP_gm1,PL_gm1)
+#p_lit and TP.2 for SMB, PYERCH, ref lakes as global pop'n
+#sea<-data %>%
+  subset()
 sea$Water[sea$Water == "Baby Lk."] <- "Barren Lake"
 sea$Water[sea$Water == "Daisy Lk."] <- "Semi-barren Lake"
 sea$Water[sea$Water == "Nelson Lk."] <- "Forested Lake"
