@@ -251,11 +251,11 @@ PL_gm <- full_join(x,x1)
 lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")
 
 PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2, position = position_dodge(0.4),show.legend=F)+
-  geom_point(position = position_dodge(0.4))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(size = 3, position = position_dodge(0.5))+
   ylim(0,1.1) +
   ylab("Proportion Littoral") + 
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D55E00", "#E69F00"), guide="none") +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"), guide="none") +
   theme_bw()+
   theme(axis.title.x = element_blank())+
   scale_x_discrete(labels = lakelab)
@@ -323,11 +323,11 @@ TP_gm<-full_join(x2,x3)
 
 #plot
 TP<- ggplot(TP_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
-  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2,position = position_dodge(0.4),show.legend=F)+
-  geom_point(position = position_dodge(0.4))+
+  geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(position = position_dodge(0.5), size = 3)+
   ylim(2.9,4.1)+
   ylab("Trophic Position")+
-  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D55E00", "#E69F00")) +
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
   theme_bw()+
   theme(axis.title.x = element_blank()) +
   scale_x_discrete(labels = lakelab)
@@ -343,7 +343,7 @@ pl2<-plot_grid(PL + theme(legend.position="none"),
 
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, x, x1, x2, x3, legend)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
