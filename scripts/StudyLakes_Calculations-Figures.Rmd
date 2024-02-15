@@ -180,6 +180,7 @@ data <- data %>%
     Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
     TRUE ~ Water
   ))
+#write.csv(data, "jd-data.csv")
 
 #######
 # SMB #

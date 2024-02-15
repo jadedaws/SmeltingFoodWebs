@@ -28,25 +28,19 @@ library(nicheROVER)
 library(viridis)
 
 ####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
-
-#siberdat <- read_csv("../data/siberdat.csv")
-#siberdat <- siberdat[-c(1)]
-siberdat <- data.frame(
-  iso1 = bigdat$adjprop_litt_EZ,
-  iso2 = bigdat$tp_2,
-  group = bigdat$TAXON,
-  community = bigdat$Water
-  )
-
+siberdat <- read_csv("../data/newsiberdat.csv")
 siberdat <- siberdat %>%
-  filter(group %in% c("SMB", "YPERCH"))
+  subset(select = c("adjp_lit", "tp_2", "TAXON", "Water2")) %>%
+  rename("iso1" = "adjp_lit",
+         "iso2" = "tp_2",
+         "group" = "TAXON",
+         "community" = "Water2")
 
 #formatting community to integers
-siberdat$community[siberdat$community == "Daisy Lk."] <- 1
-siberdat$community[siberdat$community == "Baby Lk."] <- 2
-siberdat$community[siberdat$community == "Nelson Lk."] <- 3
-siberdat$community[siberdat$community == "Richardson Lk."] <- 4
-siberdat$community[siberdat$community == "Tadenac Lk."] <- 5
+siberdat$community[siberdat$community == "Barren Lake"] <- 1
+siberdat$community[siberdat$community == "Semi-barren Lake"] <- 2
+siberdat$community[siberdat$community == "Forested Lake"] <- 3
+siberdat$community[siberdat$community == "Reference"] <- 4
 siberdat$community <- as.integer(siberdat$community)
 #formatting group as integers
 siberdat$group[siberdat$group == "SMB"] <- 1
@@ -62,6 +56,16 @@ group.hulls.args <- list(lty = 2, col = "grey20")
 
 par(mfrow=c(1,1))
 plotSiberObject(siber.obj,
+                ax.pad = 2,
+                hulls = F, community.hulls.args = community.hulls.args,
+                ellipses = T, group.ellipses.args = group.ellipses.args,
+                group.hulls = F, group.hulls.args = group.hulls.args,
+                bty = "L",
+                iso.order = c(1,2),
+                xlab = "Adjusted Proportion Littoral",
+                ylab = "Trophic Position"
+                )
+#plotSiberObject(siber.obj,
                   ax.pad = 2, 
                   hulls = F, community.hulls.args = community.hulls.args, 
                   ellipses = T, group.ellipses.args = group.ellipses.args,
@@ -85,55 +89,51 @@ print(community.ML)
 ```
 
 ```{r defining Ellipses for overlap}
-# defining ellipses. dy = Daisy Lake, bb = Baby Lake, nl = Nelson Lake, td = Tadenac Lake, rc = Richardson Lake; yp = yellow perch, smb = smallmouth bass.
-#dy smb
-ellipse1 <- "1.1" 
-#dy yp
-ellipse2 <- "1.2"
+# defining ellipses. dy = Daisy Lake, bb = Baby Lake, nl = Nelson Lake, ref = Reference; yp = yellow perch, smb = smallmouth bass.
 #bb smb
-ellipse3 <- "2.1"
+ellipse1 <- "1.1" 
 #bb yp
+ellipse2 <- "1.2"
+#dy smb
+ellipse3 <- "2.1"
+#dy yp
 ellipse4 <- "2.2"
 #nl smb
 ellipse5 <- "3.1"
 #nl yp
 ellipse6 <- "3.2"
-#rc smb
+#ref smb
 ellipse7 <- "4.1"
-#rc yp
+#ref yp
 ellipse8 <- "4.2"
-#td smb
-ellipse9 <- "5.1"
-#td yp
-ellipse10 <- "5.2"
 
 ```
 
 ```{r Ellipse overlap - max likelihood}
 ###################
-###   DAISY LK  ###
+###   BABY LK  ###
 ###################
 # The overlap of the maximum likelihood fitted standard ellipses are estimated using
-dy.overlap <- maxLikOverlap(ellipse1, ellipse2, siber.obj, 
+bb.overlap <- maxLikOverlap(ellipse1, ellipse2, siber.obj, 
                              p.interval = NULL, n = 100)
 # the overlap betweeen the corresponding 95% prediction ellipses is given by:
-dy.ellipse95.overlap <- maxLikOverlap(ellipse1, ellipse2, siber.obj, 
+bb.ellipse95.overlap <- maxLikOverlap(ellipse1, ellipse2, siber.obj, 
                              p.interval = 0.95, n = 100)
 # so in this case, the overlap as a proportion of the non-overlapping area of the two ellipses, would be
-dy.prop.95.over <- dy.ellipse95.overlap[3] / (dy.ellipse95.overlap[2] + 
-                                          dy.ellipse95.overlap[1] -
-                                          dy.ellipse95.overlap[3])
-
-###################
-###   BABY LK   ###
-###################
-bb.overlap <- maxLikOverlap(ellipse3, ellipse4, siber.obj, 
-                             p.interval = NULL, n = 100)
-bb.ellipse95.overlap <- maxLikOverlap(ellipse3, ellipse4, siber.obj, 
-                             p.interval = 0.95, n = 100)
 bb.prop.95.over <- bb.ellipse95.overlap[3] / (bb.ellipse95.overlap[2] + 
                                           bb.ellipse95.overlap[1] -
-                                         bb.ellipse95.overlap[3])
+                                          bb.ellipse95.overlap[3])
+
+###################
+###   DAISY LK   ###
+###################
+dy.overlap <- maxLikOverlap(ellipse3, ellipse4, siber.obj, 
+                             p.interval = NULL, n = 100)
+dy.ellipse95.overlap <- maxLikOverlap(ellipse3, ellipse4, siber.obj, 
+                             p.interval = 0.95, n = 100)
+dy.prop.95.over <- dy.ellipse95.overlap[3] / (dy.ellipse95.overlap[2] + 
+                                          dy.ellipse95.overlap[1] -
+                                         dy.ellipse95.overlap[3])
 
 ###################
 ##  NELSON LK   ###
@@ -147,30 +147,19 @@ nl.prop.95.over <- nl.ellipse95.overlap[3] / (nl.ellipse95.overlap[2] +
                                          nl.ellipse95.overlap[3])
 
 ###################
-#  RICHARDSON LK  #
+#  REFERENCE LKs  #
 ###################
-rc.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
+ref.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
                              p.interval = NULL, n = 100)
-rc.ellipse95.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
+ref.ellipse95.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
                              p.interval = 0.95, n = 100)
-rc.prop.95.over <- rc.ellipse95.overlap[3] / (rc.ellipse95.overlap[2] + 
-                                          rc.ellipse95.overlap[1] -
-                                         rc.ellipse95.overlap[3])
-
-###################
-##  TADENAC LK   ##
-###################
-td.overlap <- maxLikOverlap(ellipse9, ellipse10, siber.obj, 
-                             p.interval = NULL, n = 100)
-td.ellipse95.overlap <- maxLikOverlap(ellipse9, ellipse10, siber.obj, 
-                             p.interval = 0.95, n = 100)
-td.prop.95.over <- td.ellipse95.overlap[3] / (td.ellipse95.overlap[2] + 
-                                          td.ellipse95.overlap[1] -
-                                         td.ellipse95.overlap[3])
+ref.prop.95.over <- ref.ellipse95.overlap[3] / (ref.ellipse95.overlap[2] + 
+                                          ref.ellipse95.overlap[1] -
+                                         ref.ellipse95.overlap[3])
 
 ```
 
-```{r test plotst}
+```{r test plots}
 siberdat$community <- as.factor(siberdat$community)
 siberdat$group <- as.factor(siberdat$group)
 
