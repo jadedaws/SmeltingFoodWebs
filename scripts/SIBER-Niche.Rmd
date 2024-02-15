@@ -27,6 +27,8 @@ library(magrittr)
 library(nicheROVER)
 library(viridis)
 
+####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
+
 #siberdat <- read_csv("../data/siberdat.csv")
 #siberdat <- siberdat[-c(1)]
 siberdat <- data.frame(
