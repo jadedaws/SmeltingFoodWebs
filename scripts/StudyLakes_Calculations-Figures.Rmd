@@ -114,6 +114,14 @@ SI<- data%>%
 SI$d13Crange <- SI$d13C_max-SI$d13C_min
 SI$d15Nrange <- SI$d15N_max-SI$d15N_min
   
+data <- data %>%
+  mutate(Water2 = case_when(
+    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
+    TRUE ~ Water
+  ))
+data <- data %>%
+    mutate(Water2 = recode(Water2, 'Baby Lk.'='Barren Lake', 'Daisy Lk.'='Semi-barren Lake', 'Nelson Lk.'='Forested Lake'))
+
 rm(LEN, LEN_sum)
 ```
 
@@ -140,6 +148,24 @@ hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
 
 rm(smbyp_CN)
 
+data$p_litnorm <- NA
+data$p_litnorm = data$p_lit
+data$p_litnorm[data$p_lit>1.5] <- NA
+data$p_litnorm[data$p_lit<(-0.5)] <- NA
+
+pn<-data %>%
+  group_by(Water) %>%
+  filter(!is.na(p_litnorm)) %>%
+  mutate(pl_n = ((p_litnorm - min(p_litnorm))/(max(p_litnorm) - min(p_litnorm)))
+         ) %>%
+  subset(select = c("SIASAM", "pl_n"))
+
+data<- full_join(data,pn, by="SIASAM")
+
+data %>%
+  group_by(Water2, TAXON) %>%
+  summarise(n= n())
+
 #summarize pl by water + taxon
 data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
@@ -151,7 +177,7 @@ rm(data_sum)
 
 ```{r Trophic Position calculation}
 # two baseline
-data$tp_2 <- 2 + ((data$d15N - ((data$d15N_pel*(1 - data$p_lit)) + (data$d15N_lit*data$p_lit)))/3.4)
+data$tp_2 <- 2 + ((data$d15N - ((data$d15N_pel*(1 - data$adjp_lit)) + (data$d15N_lit*data$adjp_lit)))/3.4)
 
 #summarize tp by water + taxon
 data_sum_tp <- data %>% group_by(Water, TAXON) %>%
@@ -171,25 +197,16 @@ library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
-#Water<-c("Baby Lk.", "Daisy Lk.", "Nelson Lk.", "Manitou", "Mendelssohn", "Stormy", "Turtleshell", "Wawiashkashi")
-#size<-c(11.9, 36.1, 308.8, 322.1, 460.5, 333.4, 161.1, 414.4)
-#ls <- data.frame(Water,size)
-
-data <- data %>%
-  mutate(Water2 = case_when(
-    Water %in% c("Stormy", "Mendelssohn", "Manitou", "Turtleshell", "Wawiashkashi") ~ "Reference",
-    TRUE ~ Water
-  ))
-#write.csv(data, "jd-data.csv")
+#write.csv(data, "PLnorm-data.csv")
 
 #######
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(adjp_lit~Water2+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
-smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
+smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water2, adjust = "none")
 smb_pl_em
 #letters
 #mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
@@ -220,10 +237,10 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
 ## YP ##
 ########
 #ANOVA - length significant. 
-yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
+yp_pl_mod<- lm(adjp_lit~Water2+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
-yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
+yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water2, adjust = "none")
 yp_pl_em
 #grand mean
 x1<-as.data.frame(summary(yp_pl_em)$emmeans)
@@ -272,10 +289,10 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
 #######
 # SMB #
 #######
-smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
+smb_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
 #contrasts
-smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
+smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water2, adjust = "none")
 smb_tp
 #grand mean
 x2<-as.data.frame(summary(smb_tp)$emmeans)
@@ -299,10 +316,10 @@ SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
 ########
 ## YP ##
 ########
-yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
+yp_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
 #contrasts
-yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
+yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water2, adjust = "none")
 yp_tp
 #grand mean
 x3<-as.data.frame(summary(yp_tp)$emmeans)
@@ -362,6 +379,14 @@ sea<-data %>%
 sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
 sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
 sea$Water2[sea$Water2 == "Nelson Lk."]<-"Forested Lake"
+
+hist(sea$p_lit)
+sea <- sea %>%
+  filter(!p_lit > 1.5) %>%
+  filter(!p_lit < (-0.5))
+sea %>%
+  group_by(Water2, TAXON) %>%
+  summarise(n= n())
 
 ggplot(sea, aes(x = p_lit, y = tp_2, colour = TAXON, group = interaction(Water2, TAXON))) +
   geom_point() +

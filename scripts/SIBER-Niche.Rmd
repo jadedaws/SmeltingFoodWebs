@@ -28,13 +28,16 @@ library(nicheROVER)
 library(viridis)
 
 ####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
-siberdat <- read_csv("../data/newsiberdat.csv")
+siberdat <- read_csv("../data/PLnorm-data.csv")
 siberdat <- siberdat %>%
-  subset(select = c("adjp_lit", "tp_2", "TAXON", "Water2")) %>%
-  rename("iso1" = "adjp_lit",
+  subset(select = c("pl_n", "tp_2", "TAXON", "Water2")) %>%
+  rename("iso1" = "pl_n",
          "iso2" = "tp_2",
          "group" = "TAXON",
-         "community" = "Water2")
+         "community" = "Water2") %>%
+  na.omit()
+siberdat <- siberdat %>%
+  subset(group %in% c("SMB", "YPERCH"))
 
 #formatting community to integers
 siberdat$community[siberdat$community == "Barren Lake"] <- 1
@@ -62,7 +65,7 @@ plotSiberObject(siber.obj,
                 group.hulls = F, group.hulls.args = group.hulls.args,
                 bty = "L",
                 iso.order = c(1,2),
-                xlab = "Adjusted Proportion Littoral",
+                xlab = "Adjusted PL norm",
                 ylab = "Trophic Position"
                 )
 #plotSiberObject(siber.obj,
