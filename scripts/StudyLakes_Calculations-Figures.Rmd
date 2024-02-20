@@ -171,6 +171,11 @@ data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
 data <- merge(data, data_sum, by = c("Water", "TAXON"))
+data <- data %>%
+ subset(select = -c(p_litnorm)) %>%
+  rename(
+    "p_litnorm" = "pl_n"
+  )
 
 rm(data_sum)
 ```
@@ -197,7 +202,7 @@ library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
-#write.csv(data, "PLnorm-data.csv")
+#write.csv(data, "JD-data_Feb16.csv")
 
 #######
 # SMB #
@@ -380,11 +385,11 @@ sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
 sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
 sea$Water2[sea$Water2 == "Nelson Lk."]<-"Forested Lake"
 
-hist(sea$p_lit)
-sea <- sea %>%
+#hist(sea$p_lit)
+#sea <- sea %>%
   filter(!p_lit > 1.5) %>%
   filter(!p_lit < (-0.5))
-sea %>%
+#sea %>%
   group_by(Water2, TAXON) %>%
   summarise(n= n())
 
