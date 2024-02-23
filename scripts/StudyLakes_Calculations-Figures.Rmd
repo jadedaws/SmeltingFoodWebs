@@ -171,7 +171,7 @@ data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
 data <- merge(data, data_sum, by = c("Water", "TAXON"))
-data <- data %>%
+#data <- data %>%
  subset(select = -c(p_litnorm)) %>%
   rename(
     "p_litnorm" = "pl_n"
@@ -379,7 +379,7 @@ rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 sea<-data %>%
-  subset(select = c("Water2", "TAXON", "p_lit", "adjp_lit", "tp_2")) %>%
+  subset(select = c("Water","Water2", "TAXON", "p_lit", "adjp_lit","p_litnorm", "tp_2")) %>%
   filter(TAXON %in% c("SMB", "YPERCH"))
 sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
 sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
@@ -393,13 +393,18 @@ sea$Water2[sea$Water2 == "Nelson Lk."]<-"Forested Lake"
   group_by(Water2, TAXON) %>%
   summarise(n= n())
 
-ggplot(sea, aes(x = p_lit, y = tp_2, colour = TAXON, group = interaction(Water2, TAXON))) +
-  geom_point() +
+ggplot(sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Water, TAXON))) +
+  #geom_point() +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
-  labs(title = "Raw PL 40% ellipse") +
+  labs(title = "PL (-0.5-1.5) 40% ellipse") +
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
-  facet_wrap(~Water2)
+  facet_wrap(~Water)
+
+
+  zz<- stat_ellipse(data = sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Water, TAXON), type = "norm", level = 0.4, lwd = 1.5)) 
+str(zz)
+zz$compute_geom_1
 
 ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Water2, TAXON))) +
   geom_point() +
@@ -409,7 +414,7 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Wate
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
   facet_wrap(~Water2)
 
-#write.csv(x = sea, file = "newsiberdat.csv")
+write.csv(x = sea, file = "test1.csv")
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}

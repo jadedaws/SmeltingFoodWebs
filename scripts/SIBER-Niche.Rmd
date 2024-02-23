@@ -28,18 +28,19 @@ library(nicheROVER)
 library(viridis)
 
 ####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
-siberdat <- read_csv("../data/PLnorm-data.csv")
+
+siberdat <- read_csv("../data/test1.csv")
 siberdat <- siberdat %>%
-  subset(select = c("pl_n", "tp_2", "TAXON", "Water2")) %>%
-  rename("iso1" = "pl_n",
+  subset(select = c("p_litnorm", "tp_2", "TAXON", "Water")) %>%
+  rename("iso1" = "p_litnorm",
          "iso2" = "tp_2",
          "group" = "TAXON",
-         "community" = "Water2") %>%
+         "community" = "Water") %>%
   na.omit()
 siberdat <- siberdat %>%
   subset(group %in% c("SMB", "YPERCH"))
 
-#formatting community to integers
+#formatting community to integers ###add ref as sep lines
 siberdat$community[siberdat$community == "Barren Lake"] <- 1
 siberdat$community[siberdat$community == "Semi-barren Lake"] <- 2
 siberdat$community[siberdat$community == "Forested Lake"] <- 3
@@ -166,8 +167,9 @@ ref.prop.95.over <- ref.ellipse95.overlap[3] / (ref.ellipse95.overlap[2] +
 siberdat$community <- as.factor(siberdat$community)
 siberdat$group <- as.factor(siberdat$group)
 
-ggplot(siberdat, aes(x = iso1, y = iso2, colour = group)) +
-  geom_point() +
+#exclude pts
+ggplot(siberdat, aes(x = iso1, y = iso2, group = group, colour = group)) +
+  #geom_point() +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
   facet_wrap(~community) +
