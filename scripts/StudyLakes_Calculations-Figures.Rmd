@@ -171,13 +171,30 @@ data_sum <- data %>% group_by(Water, TAXON) %>%
   summarise(mean.pl = mean(p_litnorm), sd.pl = sd(p_litnorm), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
 data <- merge(data, data_sum, by = c("Water", "TAXON"))
-#data <- data %>%
- subset(select = -c(p_litnorm)) %>%
-  rename(
-    "p_litnorm" = "pl_n"
-  )
 
-rm(data_sum)
+#calculate proportion of data outside of 0-1 PL raw values
+pl_in <- data %>%
+  filter(!p_lit > 1.01) %>%
+  filter(!p_lit < (0)) %>%
+  filter(TAXON == c('SMB','YPERCH'))
+pl_over <- data %>%
+  filter(!p_lit < 1.01) %>%
+  filter(TAXON == c('SMB','YPERCH'))
+pl_under <- data %>%
+  filter(!p_lit > (0))%>%
+  filter(TAXON == c('YPERCH'))
+
+num_in<- pl_in %>%
+  summarise(n= n())
+num_over <- pl_over %>%
+  summarise(n= n())
+num_under <- pl_under %>%
+  summarise(n= n())
+num_out <- num_under + num_over
+proportion_in <- ((num_in)/(num_in + num_out))*100
+proportion_in
+
+rm(data_sum, pl_in, pl_over, pl_under, num_in, num_over, num_under, num_out)
 ```
 
 ```{r Trophic Position calculation}
@@ -373,7 +390,7 @@ pl2<-plot_grid(PL + theme(legend.position="none"),
 
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, smb_pl_em, yp_pl_em, smb_tp, yp_tp, x, x1, x2, x3, legend)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3, legend)
 ```
 ##Range info for TP and PL needed for CJFAS body text
 
@@ -384,22 +401,28 @@ sea<-data %>%
 sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
 sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
 sea$Water2[sea$Water2 == "Nelson Lk."]<-"Forested Lake"
+sea$Lake <- NA
+sea$Lake = sea$Water
+sea$Lake[sea$Lake == "Baby Lk."]<-"Barren Lake"
+sea$Lake[sea$Lake == "Daisy Lk."]<-"Semi-barren Lake"
+sea$Lake[sea$Lake == "Nelson Lk."]<-"Forested Lake"
+sea$Lake[sea$Lake == "Mendelssohn"]<-"Reference 1"
+sea$Lake[sea$Lake == "Turtleshell"]<-"Reference 2"
+sea$Lake[sea$Lake == "Manitou"]<-"Reference 3"
+sea$Lake[sea$Lake == "Wawiashkashi"]<-"Reference 4"
+sea$Lake[sea$Lake == "Stormy"]<-"Reference 5"
 
 #hist(sea$p_lit)
-#sea <- sea %>%
-  filter(!p_lit > 1.5) %>%
-  filter(!p_lit < (-0.5))
-#sea %>%
-  group_by(Water2, TAXON) %>%
-  summarise(n= n())
 
-ggplot(sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Water, TAXON))) +
-  #geom_point() +
+#40% ellipse with PL (-0.5-1.5, lipid corr)
+ggplot(sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Lake, TAXON))) +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
-  labs(title = "PL (-0.5-1.5) 40% ellipse") +
+  ylab("Trophic Position")+
+  xlab("Proportion Littoral")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
-  facet_wrap(~Water)
+  theme(legend.position = "bottom")+
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))
 
 
   zz<- stat_ellipse(data = sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Water, TAXON), type = "norm", level = 0.4, lwd = 1.5)) 
@@ -414,7 +437,76 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Wate
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
   facet_wrap(~Water2)
 
-write.csv(x = sea, file = "test1.csv")
+#write.csv(x = sea, file = "test1.csv")
+```
+
+```{r plotting reference lakes individually - Supplemental}
+#pl
+smb_pl_ref<-as.data.frame(summary(smb_pl_em)$emmeans)%>%
+  filter(!Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
+smb_pl_ref$TAXON<-"SMB"
+smb_pl_ref<-as.data.frame(smb_pl_ref)
+yp_pl_ref<-as.data.frame(summary(yp_pl_em)$emmeans)%>%
+  filter(!Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
+yp_pl_ref$TAXON<-"YPERCH"
+yp_pl_ref<-as.data.frame(yp_pl_ref)
+pl_ref<- full_join(smb_pl_ref, yp_pl_ref)
+pl_ref$Lake<-NA
+pl_ref$Lake[pl_ref$Water == "Mendelssohn"]<-"Reference 1"
+pl_ref$Lake[pl_ref$Water == "Turtleshell"]<-"Reference 2"
+pl_ref$Lake[pl_ref$Water == "Manitou"]<-"Reference 3"
+pl_ref$Lake[pl_ref$Water == "Wawiashkashi"]<-"Reference 4"
+pl_ref$Lake[pl_ref$Water == "Stormy"]<-"Reference 5"
+
+refPL<-ggplot(pl_ref, aes(x=Lake, y=emmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(position = position_dodge(0.5), size = 3)+
+  ylim(-0.1,1.0)+
+  ylab("Proportion Littoral")+
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
+  theme_bw()+
+  theme(axis.title.x = element_blank()) +
+  scale_x_discrete()
+
+#tp
+smb_tp_ref<-as.data.frame(summary(smb_tp)$emmeans) %>%
+  filter(!Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
+smb_tp_ref$TAXON<-"SMB"
+smb_tp_ref<-as.data.frame(smb_tp_ref)
+yp_tp_ref<-as.data.frame(summary(yp_tp)$emmeans)%>%
+  filter(!Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
+yp_tp_ref$TAXON<-"YPERCH"
+yp_tp_ref<-as.data.frame(yp_tp_ref)
+tp_ref<- full_join(smb_tp_ref, yp_tp_ref)
+tp_ref$Lake<-NA
+tp_ref$Lake[tp_ref$Water == "Mendelssohn"]<-"Reference 1"
+tp_ref$Lake[tp_ref$Water == "Turtleshell"]<-"Reference 2"
+tp_ref$Lake[tp_ref$Water == "Manitou"]<-"Reference 3"
+tp_ref$Lake[tp_ref$Water == "Wawiashkashi"]<-"Reference 4"
+tp_ref$Lake[tp_ref$Water == "Stormy"]<-"Reference 5"
+
+refTP<-ggplot(tp_ref, aes(x=Lake, y=emmean, colour=TAXON))+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(position = position_dodge(0.5), size = 3)+
+  ylim(3.0,4.4)+
+  ylab("Trophic Position")+
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
+  theme_bw()+
+  theme(axis.title.x = element_blank()) +
+  scale_x_discrete()
+
+legend<- get_legend(refTP +
+                      guides(colour = guide_legend(nrow=1)) +
+                      theme(legend.position = "bottom"))
+
+##2 panel plot
+tt<-plot_grid(refPL + theme(legend.position="none"), 
+          refTP + theme(legend.position="none"), 
+          labels = "AUTO")
+
+plot_grid(tt, legend, ncol=1, rel_heights = c(1, .1))
+
+rm(smb_pl_em, yp_pl_em, smb_pl_ref, yp_pl_ref, smb_tp, yp_tp, smb_tp_ref, yp_tp_ref)
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
