@@ -166,9 +166,9 @@ data %>%
   group_by(Water2, TAXON) %>%
   summarise(n= n())
 
-#summarize pl by water + taxon
+#summarize pl by water + taxon-- Using prop lit that's been lipid corrected and removed outliers, adjpl is lipid corrected and bound between 0-1
 data_sum <- data %>% group_by(Water, TAXON) %>%
-  summarise(mean.pl = mean(p_lit), sd.pl = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
+  summarise(mean.pl = mean(p_litnorm), sd.pl = sd(p_litnorm), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
 data <- merge(data, data_sum, by = c("Water", "TAXON"))
 #data <- data %>%
@@ -208,10 +208,10 @@ data$TAXON <- as.factor(data$TAXON)
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(adjp_lit~Water2+length, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(p_litnorm~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
-smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water2, adjust = "none")
+smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
 smb_pl_em
 #letters
 #mod_means <- cld(smb_pl_em, alpha = 0.05, Letters = letters)
@@ -242,10 +242,10 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
 ## YP ##
 ########
 #ANOVA - length significant. 
-yp_pl_mod<- lm(adjp_lit~Water2+length, data=data, subset=(TAXON=="YPERCH"))
+yp_pl_mod<- lm(p_litnorm~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
-yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water2, adjust = "none")
+yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
 yp_pl_em
 #grand mean
 x1<-as.data.frame(summary(yp_pl_em)$emmeans)
@@ -269,7 +269,7 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
 
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
-PL_gm$letter <- c("A", "A", "B", "C", "AB", "A", "B", "A")
+PL_gm$letter <- c("A", "A", "B", "C", "AC", "BC", "A", "C")
 
 
 #plot
@@ -280,7 +280,7 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_point(size = 3, position = position_dodge(0.5))+
   geom_text(aes(x = Water2, y = gupper.CL,label = letter, group = TAXON), 
             position = position_dodge(width = 0.5), vjust = -0.5, colour = "black", size =5) +
-  ylim(0,1.1) +
+  ylim(0,1.2) +
   ylab("Proportion Littoral") + 
   scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"), guide="none") +
   theme_bw()+
@@ -294,10 +294,10 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
 #######
 # SMB #
 #######
-smb_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="SMB"))
+smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
 #contrasts
-smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water2, adjust = "none")
+smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
 #grand mean
 x2<-as.data.frame(summary(smb_tp)$emmeans)
@@ -321,10 +321,10 @@ SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
 ########
 ## YP ##
 ########
-yp_tp_mod<- lm(tp_2~Water2+length, data=data, subset=(TAXON=="YPERCH"))
+yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
 #contrasts
-yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water2, adjust = "none")
+yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
 yp_tp
 #grand mean
 x3<-as.data.frame(summary(yp_tp)$emmeans)
