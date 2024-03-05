@@ -20,6 +20,9 @@ library(readr)
 ```
 
 #CALCULATING MEAN NICHE SEPARATION/OVERLAP AND ELLIPSE SIZES#
+#run this, note SEAc and SEAb
+#then re-assign communities so ref lakes separate
+#then re-run, note SEAc and SEAb, take mean for ref lakes
 
 ```{r Ellipse area}
 library(SIBER)
@@ -31,8 +34,8 @@ library(viridis)
 
 siberdat <- read_csv("../data/test1.csv")
 siberdat <- siberdat %>%
-  subset(select = c("p_litnorm", "tp_2", "TAXON", "Water")) %>%
-  rename("iso1" = "p_litnorm",
+  subset(select = c("plit_bound", "tp_2", "TAXON", "Water")) %>%
+  rename("iso1" = "plit_bound",
          "iso2" = "tp_2",
          "group" = "TAXON",
          "community" = "Water") %>%
@@ -174,21 +177,6 @@ ggplot(siberdat, aes(x = iso1, y = iso2, group = group, colour = group)) +
   theme_classic(base_size = 14) +
   facet_wrap(~community) +
   labs(title = "40% Ellipse")
-
-```
-
-```{r add to table}
-#summary means and sd
-sumiso <- siberdat %>% 
-  group_by(group, community) %>%
-  summarise(mean_d13C = mean(iso1), mean_d15N = mean(iso2), sd_d13C = sd(iso1), sd_d15N = sd(iso2), min_d13C = min(iso1), max_d13C = max(iso1), min_d15N = min(iso2), max_d15N = max(iso2))
-
-sumiso$rangeC <- NA
-sumiso$rangeC <- sumiso$max_d13C - sumiso$min_d13C
-sumiso$rangeN <- NA
-sumiso$rangeN <- sumiso$max_d15N - sumiso$min_d15N
-
-#gives range of data, NOT of ellipses#
 
 ```
 

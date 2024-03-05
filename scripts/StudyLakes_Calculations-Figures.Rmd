@@ -148,15 +148,15 @@ hist(subset(data$adjp_lit, data$TAXON %in% c("SMB", "YPERCH")))
 
 rm(smbyp_CN)
 
-data$p_litnorm <- NA
-data$p_litnorm = data$p_lit
-data$p_litnorm[data$p_lit>1.5] <- NA
-data$p_litnorm[data$p_lit<(-0.5)] <- NA
+data$plit_bound <- NA
+data$plit_bound = data$p_lit
+data$plit_bound[data$p_lit>1.5] <- NA
+data$plit_bound[data$p_lit<(-0.5)] <- NA
 
 pn<-data %>%
   group_by(Water) %>%
-  filter(!is.na(p_litnorm)) %>%
-  mutate(pl_n = ((p_litnorm - min(p_litnorm))/(max(p_litnorm) - min(p_litnorm)))
+  filter(!is.na(plit_bound)) %>%
+  mutate(pl_n = ((plit_bound - min(plit_bound))/(max(plit_bound) - min(plit_bound)))
          ) %>%
   subset(select = c("SIASAM", "pl_n"))
 
@@ -168,7 +168,7 @@ data %>%
 
 #summarize pl by water + taxon-- Using prop lit that's been lipid corrected and removed outliers, adjpl is lipid corrected and bound between 0-1
 data_sum <- data %>% group_by(Water, TAXON) %>%
-  summarise(mean.pl = mean(p_litnorm), sd.pl = sd(p_litnorm), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
+  summarise(mean.pl = mean(plit_bound), sd.pl = sd(plit_bound), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
 #add to df
 data <- merge(data, data_sum, by = c("Water", "TAXON"))
 
@@ -194,7 +194,7 @@ num_out <- num_under + num_over
 proportion_in <- ((num_in)/(num_in + num_out))*100
 proportion_in
 
-rm(data_sum, pl_in, pl_over, pl_under, num_in, num_over, num_under, num_out)
+rm(data_sum, pn, pl_in, pl_over, pl_under, num_in, num_over, num_under, num_out)
 ```
 
 ```{r Trophic Position calculation}
@@ -219,13 +219,13 @@ library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
-#write.csv(data, "JD-data_Feb16.csv")
+#write.csv(data, "ellipse-data_Mar04.csv")
 
 #######
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(p_litnorm~Water, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(plit_bound~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
 smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
@@ -259,7 +259,7 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
 ## YP ##
 ########
 #ANOVA - length significant. 
-yp_pl_mod<- lm(p_litnorm~Water+length, data=data, subset=(TAXON=="YPERCH"))
+yp_pl_mod<- lm(plit_bound~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
 yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
@@ -396,7 +396,7 @@ rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3, legend)
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 sea<-data %>%
-  subset(select = c("Water","Water2", "TAXON", "p_lit", "adjp_lit","p_litnorm", "tp_2")) %>%
+  subset(select = c("Water","Water2", "TAXON", "p_lit", "adjp_lit","plit_bound", "tp_2")) %>%
   filter(TAXON %in% c("SMB", "YPERCH"))
 sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
 sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
@@ -415,7 +415,7 @@ sea$Lake[sea$Lake == "Stormy"]<-"Reference 5"
 #hist(sea$p_lit)
 
 #40% ellipse with PL (-0.5-1.5, lipid corr)
-ggplot(sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Lake, TAXON))) +
+ggplot(sea, aes(x = plit_bound, y = tp_2, colour = TAXON, group = interaction(Lake, TAXON))) +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
   ylab("Trophic Position")+
@@ -425,10 +425,11 @@ ggplot(sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Lak
   facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))
 
 
-  zz<- stat_ellipse(data = sea, aes(x = p_litnorm, y = tp_2, colour = TAXON, group = interaction(Water, TAXON), type = "norm", level = 0.4, lwd = 1.5)) 
+  zz<- stat_ellipse(data = sea, aes(x = plit_bound, y = tp_2, colour = TAXON, group = interaction(Water, TAXON), type = "norm", level = 0.4, lwd = 1.5)) 
 str(zz)
 zz$compute_geom_1
 
+#40% adjusted plit
 ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Water2, TAXON))) +
   geom_point() +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
@@ -440,7 +441,7 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Wate
 #write.csv(x = sea, file = "test1.csv")
 ```
 
-```{r plotting reference lakes individually - Supplemental}
+```{r PL, TP plotting reference lakes individually - Supplemental}
 #pl
 smb_pl_ref<-as.data.frame(summary(smb_pl_em)$emmeans)%>%
   filter(!Water %in% c("Baby Lk.", "Daisy Lk.", "Nelson Lk."))
