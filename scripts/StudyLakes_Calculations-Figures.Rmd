@@ -219,7 +219,8 @@ library(cowplot)
 library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
 
-#write.csv(data, "ellipse-data_Mar04.csv")
+#path_out <- "../data/"
+#write.csv(data,paste(path_out,'ellipse-data_Mar04.csv',sep = ''))
 
 #######
 # SMB #
