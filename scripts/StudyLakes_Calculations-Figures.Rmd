@@ -458,10 +458,13 @@ pl_ref$Lake[pl_ref$Water == "Turtleshell"]<-"Reference 2"
 pl_ref$Lake[pl_ref$Water == "Manitou"]<-"Reference 3"
 pl_ref$Lake[pl_ref$Water == "Wawiashkashi"]<-"Reference 4"
 pl_ref$Lake[pl_ref$Water == "Stormy"]<-"Reference 5"
+pl_ref$letter <- c("A", "A", "C", "BC", "AC", "A", "A", "A", "A", "A")
 
 refPL<-ggplot(pl_ref, aes(x=Lake, y=emmean, colour=TAXON))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
   geom_point(position = position_dodge(0.5), size = 3)+
+  geom_text(aes(x = Lake, y = upper.CL,label = letter, group = TAXON), 
+            position = position_dodge(width = 0.5), vjust = -0.5, colour = "black", size =5) +
   ylim(-0.1,1.0)+
   ylab("Proportion Littoral")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
@@ -485,10 +488,13 @@ tp_ref$Lake[tp_ref$Water == "Turtleshell"]<-"Reference 2"
 tp_ref$Lake[tp_ref$Water == "Manitou"]<-"Reference 3"
 tp_ref$Lake[tp_ref$Water == "Wawiashkashi"]<-"Reference 4"
 tp_ref$Lake[tp_ref$Water == "Stormy"]<-"Reference 5"
+tp_ref$letter <- c("B", "A", "B", "BC", "C", "A", "A", "A", "A", "A")
 
 refTP<-ggplot(tp_ref, aes(x=Lake, y=emmean, colour=TAXON))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
   geom_point(position = position_dodge(0.5), size = 3)+
+    geom_text(aes(x = Lake, y = upper.CL,label = letter, group = TAXON), 
+            position = position_dodge(width = 0.5), vjust = -0.5, colour = "black", size =5) +
   ylim(3.0,4.4)+
   ylab("Trophic Position")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
@@ -616,60 +622,7 @@ plot_grid(unadjpl, adjpl, labels = "AUTO")
 ```
 
 #######OLD TO REMOVE######
-```{r Proportion Littoral plot - CJFAS Fig 4}
 
-smbyplab <- c("Smallmouth bass", "Yellow perch")
-
-##MEAN +/- sd
-unadjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.pl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.pl + sd.pl, ymin = mean.pl - sd.pl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy usage +/- sd") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw()
-
-unadjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = p_lit), shape = 1)
-
-##CJFAS Fig 4 - Adj Prop Littoral##
-adjpl <- ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.adjpl, colour = TAXON, group = TAXON)) +
-  geom_point(show.legend = FALSE) +
-  geom_errorbar(aes(ymax = mean.adjpl + sd.adjpl, ymin = mean.adjpl - sd.adjpl), show.legend = FALSE) +
-  xlab("Fish species") +
-  ylab("Mean proportion littoral energy +/- sd (adjusted)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() 
-
-adjpl + geom_point(data = subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = adjp_lit), shape = 1)
-
-```
-
-```{r Trophic Position Plot - CJFAS Fig 2}
-
-##CJFAS FIGURE 2 - MIXED TP ##
-smbyplab <- c("Smallmouth bass", "Yellow perch")
-
-TPFig<-ggplot(subset(data_sum_tp, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = mean.tp2, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.tp2 + sd.tp2, ymin = mean.tp2 - sd.tp2)) +
-  xlab("Fish species") +
-  ylab("Mean Trophic Position +/- sd (two end mixed)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text())
-
-TPFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = tp_2), shape = 1)
-
-```
 
 ```{r SEA plot}
 ##OLD##
