@@ -43,7 +43,7 @@ siberdat <- siberdat %>%
 siberdat <- siberdat %>%
   subset(group %in% c("SMB", "YPERCH"))
 
-#formatting community to integers ###add ref as sep lines
+#formatting community to integers
 siberdat$community[siberdat$community == "Baby Lk."] <- 1
 siberdat$community[siberdat$community == "Daisy Lk."] <- 2
 siberdat$community[siberdat$community == "Nelson Lk."] <- 3
@@ -76,16 +76,7 @@ plotSiberObject(siber.obj,
                 xlab = "Proportion Littoral",
                 ylab = "Trophic Position"
                 )
-#plotSiberObject(siber.obj,
-                  ax.pad = 2, 
-                  hulls = F, community.hulls.args = community.hulls.args, 
-                  ellipses = T, group.ellipses.args = group.ellipses.args,
-                  group.hulls = F, group.hulls.args = group.hulls.args,
-                  bty = "L",
-                  iso.order = c(1,2),
-                  xlab = expression({delta}^13*C~'\u2030'),
-                  ylab = expression({delta}^15*N~'\u2030')
-                  )
+
 
 #species in each lake
 group.ML <- groupMetricsML(siber.obj)
