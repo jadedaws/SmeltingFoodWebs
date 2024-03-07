@@ -32,7 +32,7 @@ library(viridis)
 
 ####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
 
-siberdat <- read_csv("../data/test1.csv")
+siberdat <- read_csv("../data/siberdat_full.csv")
 siberdat <- siberdat %>%
   subset(select = c("plit_bound", "tp_2", "TAXON", "Water")) %>%
   rename("iso1" = "plit_bound",
@@ -44,10 +44,14 @@ siberdat <- siberdat %>%
   subset(group %in% c("SMB", "YPERCH"))
 
 #formatting community to integers ###add ref as sep lines
-siberdat$community[siberdat$community == "Barren Lake"] <- 1
-siberdat$community[siberdat$community == "Semi-barren Lake"] <- 2
-siberdat$community[siberdat$community == "Forested Lake"] <- 3
-siberdat$community[siberdat$community == "Reference"] <- 4
+siberdat$community[siberdat$community == "Baby Lk."] <- 1
+siberdat$community[siberdat$community == "Daisy Lk."] <- 2
+siberdat$community[siberdat$community == "Nelson Lk."] <- 3
+siberdat$community[siberdat$community == "Mendelssohn"] <- 4
+siberdat$community[siberdat$community == "Turtleshell"] <- 5
+siberdat$community[siberdat$community == "Manitou"] <- 6
+siberdat$community[siberdat$community == "Wawiashkashi"] <- 7
+siberdat$community[siberdat$community == "Stormy"] <- 8
 siberdat$community <- as.integer(siberdat$community)
 #formatting group as integers
 siberdat$group[siberdat$group == "SMB"] <- 1
@@ -69,7 +73,7 @@ plotSiberObject(siber.obj,
                 group.hulls = F, group.hulls.args = group.hulls.args,
                 bty = "L",
                 iso.order = c(1,2),
-                xlab = "Adjusted PL norm",
+                xlab = "Proportion Littoral",
                 ylab = "Trophic Position"
                 )
 #plotSiberObject(siber.obj,
@@ -96,7 +100,7 @@ print(community.ML)
 ```
 
 ```{r defining Ellipses for overlap}
-# defining ellipses. dy = Daisy Lake, bb = Baby Lake, nl = Nelson Lake, ref = Reference; yp = yellow perch, smb = smallmouth bass.
+# defining ellipses. dy = Daisy Lake, bb = Baby Lake, nl = Nelson Lake, men = Mendelssohn, ts = Turtleshell, man =  Manitou, ww = Wawiashkashi, st = Stormy; yp = yellow perch, smb = smallmouth bass.
 #bb smb
 ellipse1 <- "1.1" 
 #bb yp
@@ -109,10 +113,26 @@ ellipse4 <- "2.2"
 ellipse5 <- "3.1"
 #nl yp
 ellipse6 <- "3.2"
-#ref smb
+#men smb
 ellipse7 <- "4.1"
-#ref yp
+#men yp
 ellipse8 <- "4.2"
+#ts smb
+ellipse9 <- "5.1"
+#ts yp
+ellipse10 <- "5.2"
+#man smb
+ellipse11 <- "6.1"
+#man yp
+ellipse12 <- "6.2"
+#ww smb
+ellipse13 <- "7.1"
+#ww yp
+ellipse14 <- "7.2"
+#st smb
+ellipse15 <- "8.1"
+#st yp
+ellipse16 <- "8.2"
 
 ```
 
@@ -154,15 +174,59 @@ nl.prop.95.over <- nl.ellipse95.overlap[3] / (nl.ellipse95.overlap[2] +
                                          nl.ellipse95.overlap[3])
 
 ###################
-#  REFERENCE LKs  #
+#   MENDELSSOHN   #
 ###################
-ref.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
+men.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
                              p.interval = NULL, n = 100)
-ref.ellipse95.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
+men.ellipse95.overlap <- maxLikOverlap(ellipse7, ellipse8, siber.obj, 
                              p.interval = 0.95, n = 100)
-ref.prop.95.over <- ref.ellipse95.overlap[3] / (ref.ellipse95.overlap[2] + 
-                                          ref.ellipse95.overlap[1] -
-                                         ref.ellipse95.overlap[3])
+men.prop.95.over <- men.ellipse95.overlap[3] / (men.ellipse95.overlap[2] + 
+                                          men.ellipse95.overlap[1] -
+                                         men.ellipse95.overlap[3])
+
+###################
+#   TURTLESHELL   #
+###################
+ts.overlap <- maxLikOverlap(ellipse9, ellipse10, siber.obj, 
+                             p.interval = NULL, n = 100)
+ts.ellipse95.overlap <- maxLikOverlap(ellipse9, ellipse10, siber.obj, 
+                             p.interval = 0.95, n = 100)
+ts.prop.95.over <- ts.ellipse95.overlap[3] / (ts.ellipse95.overlap[2] + 
+                                          ts.ellipse95.overlap[1] -
+                                         ts.ellipse95.overlap[3])
+
+###################
+#     MANITOU     #
+###################
+man.overlap <- maxLikOverlap(ellipse11, ellipse12, siber.obj, 
+                             p.interval = NULL, n = 100)
+man.ellipse95.overlap <- maxLikOverlap(ellipse11, ellipse12, siber.obj, 
+                             p.interval = 0.95, n = 100)
+man.prop.95.over <- man.ellipse95.overlap[3] / (man.ellipse95.overlap[2] + 
+                                          man.ellipse95.overlap[1] -
+                                         man.ellipse95.overlap[3])
+
+###################
+#   WAWIASHKASHI  #
+###################
+ww.overlap <- maxLikOverlap(ellipse13, ellipse14, siber.obj, 
+                             p.interval = NULL, n = 100)
+ww.ellipse95.overlap <- maxLikOverlap(ellipse13, ellipse14, siber.obj, 
+                             p.interval = 0.95, n = 100)
+ww.prop.95.over <- ww.ellipse95.overlap[3] / (ww.ellipse95.overlap[2] + 
+                                          ww.ellipse95.overlap[1] -
+                                         ww.ellipse95.overlap[3])
+
+###################
+#     STORMY      #
+###################
+st.overlap <- maxLikOverlap(ellipse15, ellipse16, siber.obj, 
+                             p.interval = NULL, n = 100)
+st.ellipse95.overlap <- maxLikOverlap(ellipse15, ellipse16, siber.obj, 
+                             p.interval = 0.95, n = 100)
+st.prop.95.over <- st.ellipse95.overlap[3] / (st.ellipse95.overlap[2] + 
+                                          st.ellipse95.overlap[1] -
+                                         st.ellipse95.overlap[3])
 
 ```
 
