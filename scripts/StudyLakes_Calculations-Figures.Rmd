@@ -226,7 +226,7 @@ data$TAXON <- as.factor(data$TAXON)
 # SMB #
 #######
 #ANOVA w/ only sig. variables
-smb_pl_mod<- lm(plit_bound~Water, data=data, subset=(TAXON=="SMB"))
+smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
 smb_pl_em<-emmeans(smb_pl_mod, pairwise ~ Water, adjust = "none")
@@ -260,7 +260,7 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
 ## YP ##
 ########
 #ANOVA - length significant. 
-yp_pl_mod<- lm(plit_bound~Water+length, data=data, subset=(TAXON=="YPERCH"))
+yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
 yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
@@ -304,6 +304,8 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   theme_bw()+
   theme(axis.title.x = element_blank())+
   scale_x_discrete(labels = lakelab)
+
+
 
 #####################
 ###      TP       ###
@@ -439,7 +441,9 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Wate
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
   facet_wrap(~Water2)
 
-#write.csv(x = sea, file = "test1.csv")
+#path_out <- "../data/"
+#write.csv(sea,paste(path_out,'big-siberdat.csv',sep = ''))
+
 ```
 
 ```{r PL, TP plotting reference lakes individually - Supplemental}

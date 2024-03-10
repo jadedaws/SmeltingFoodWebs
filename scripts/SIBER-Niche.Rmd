@@ -32,7 +32,7 @@ library(viridis)
 
 ####import new SIBER dat, make 2 df, one p_lit, one adjp_lit, rename iso1, iso2, group, community columns for both
 
-siberdat <- read_csv("../data/siberdat_full.csv")
+siberdat <- read_csv("../data/big-siberdat.csv")
 siberdat <- siberdat %>%
   subset(select = c("plit_bound", "tp_2", "TAXON", "Water")) %>%
   rename("iso1" = "plit_bound",
@@ -265,12 +265,13 @@ mu.post <- extractPosteriorMeans(siber.obj, ellipses.posterior)
 layman.B <- bayesianLayman(mu.post)
 
 
+
 # --------------------------------------
 # Visualise the first community
 # --------------------------------------
 
 # drop the 3rd column of the posterior which is TA using -3.
-siberDensityPlot(layman.B[[1]][ , -3], 
+#siberDensityPlot(layman.B[[1]][ , -3], 
                  xticklabels = colnames(layman.B[[1]][ , -3]), 
                  bty="L", ylim = c(0,20))
 
