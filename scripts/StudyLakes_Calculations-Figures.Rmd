@@ -18,11 +18,14 @@ library(naniar)
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(reshape2)
+library(emmeans)
+library(cowplot)
+library(multcomp)
 
-###Github connection to McCann & Johnston dataset for CompleteIso with the BsM comparison lakes
+#Github connection to dataset for CompleteIso with the BsM comparison lakes
 data <- read_csv("../data/Dawson-Isotopes-StudyLakes.csv")
-
-###Adding new lakes from Johnston
+#Adding new lakes from Johnston
 new_dat <- read_csv("../data/Dawson-Isotopes-2024Feb06.csv")
 new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Check, Comments)) %>%
           rename("SIASAM" = "SIA SAM",
@@ -31,8 +34,7 @@ new_dat <- subset(new_dat, select=-c(FISH, REGION, YEAR, DAY, COMP, Tissue, Chec
                "d15N" = "Del 15N",
                "C.N" = "C/N")
 new_dat$Water[new_dat$Water == "Manitou-2"] <- "Manitou"
-
-###Stitching
+#df
 cols.num <- c("d13C","d15N", "C.N", "FLEN", "TLEN", "RWT")
 new_dat[cols.num] <- sapply(new_dat[cols.num],as.numeric)
 data <- bind_rows(data, new_dat)
@@ -42,7 +44,7 @@ rm(new_dat)
 ```
 
 ```{r Cleaning data, creating variables}
-##Subsetting data for just baselines
+#Subset for baselines
 base_data <- data %>%
   filter(grepl("EPH|ZOOP|PERI|MAYFLY|EPHEMERI|SNAIL|CLAM|CRAYFISH|AMPHIPOD|HEPTAGEN", TAXON)) %>%
   mutate(TAXON = recode(TAXON, EPH='MAYFLY', EPHEMERI='MAYFLY', HEPTAGEN='MAYFLY'))
@@ -53,8 +55,7 @@ base_data <- base_data %>%
   subset(TAXON %in% c("CLAM", "MAYFLY", "ZOOP","SNAIL","AMPHIPOD")) %>%
   summarise(mean_d13C = mean(d13C), mean_d15N = mean(d15N), sd_d13C = sd(d13C), sd_d15N = sd(d15N))
 
-#make dataset w columns for d13C, d15N by baseline
-library(reshape2)
+#df w columns for d13C, d15N by baseline
 d13C <- dcast(data = base_data, formula = Water ~ TAXON, value.var = "mean_d13C")
 d13C <- d13C %>% 
         rename("d13C_clam" = "CLAM",
@@ -149,7 +150,7 @@ hist(subset(data$p_lit, data$TAXON %in% c("SMB","YPERCH")))
 
 smbyp_CN<-ggplot(subset(data, TAXON %in% c("SMB", "YPERCH")), aes(x = d13C_norm, y = d15N, colour = TAXON, group = TAXON)) +
   geom_point(show.legend = FALSE) +
-  facet_wrap(~Water)
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))
 smbyp_CN + geom_point(aes(x = d13C_lit, y = d15N_lit, colour = "littoral")) +
   geom_point(aes(x = d13C_pel, y = d15N_pel, colour = "pelagic"))
 
@@ -228,18 +229,14 @@ rm(data_sum_tp)
 #######################
 ###  PROP LITTORAL  ###
 #######################
-library(emmeans)
-library(cowplot)
-library(multcomp)
 data$TAXON <- as.factor(data$TAXON)
-
 #path_out <- "../data/"
 #write.csv(data,paste(path_out,'ellipse-data_Mar04.csv',sep = ''))
 
 #######
 # SMB #
 #######
-#ANOVA w/ only sig. variables
+#ANOVA
 smb_pl_mod<- lm(adjp_lit~Water, data=data, subset=(TAXON=="SMB"))
 anova(smb_pl_mod)
 #contrasts
@@ -270,10 +267,8 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
   ylab("SMB Proportion Littoral") + 
   theme_bw()
 
-########
-## YP ##
-########
-#ANOVA - length significant. 
+##YP
+#ANOVA 
 yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
@@ -298,15 +293,11 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
   ylim(-0.1,1.2) +
   ylab("YP Proportion Littoral") +  
   theme_bw()
-
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
 PL_gm$letter <- c("A", "A", "B", "C", "AC", "BC", "A", "C")
-
-
 #plot
 lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")
-
 PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
   geom_point(size = 3, position = position_dodge(0.5))+
@@ -320,17 +311,15 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   scale_x_discrete(labels = lakelab)
 
 
-
 #####################
 ###      TP       ###
 #####################
 
-#######
-# SMB #
-#######
+##SMB
+#ANOVA
 smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
-#contrasts
+#ANCOVA
 smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
 #grand mean
@@ -352,9 +341,7 @@ SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
   ylab("SMB Trophic Position") + 
   theme_bw()
 
-########
-## YP ##
-########
+##YP
 yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
 #contrasts
@@ -371,6 +358,7 @@ x3 <- x3 %>%
   summarise(gemmean = mean(emmean), glower.CL = mean(lower.CL), gupper.CL = mean(upper.CL))
 x3$TAXON<-"YPERCH"
 x3<-as.data.frame(x3)
+
 #plot
 YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.2)+
@@ -378,11 +366,9 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
   ylim(2.9,4.25) +
   ylab("YP Trophic Position") +
   theme_bw()
-
-#stitch as df
+#stitch df
 TP_gm<-full_join(x2,x3)
 TP_gm$letter <- c("A", "B", "B", "B", "A", "A", "A", "A")
-
 #plot
 TP<- ggplot(TP_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
@@ -400,11 +386,10 @@ legend<- get_legend(TP +
                       guides(colour = guide_legend(nrow=1)) +
                       theme(legend.position = "bottom"))
 
-##2 panel plot
+##final plot
 pl2<-plot_grid(PL + theme(legend.position="none"), 
           TP + theme(legend.position="none"), 
           labels = "AUTO")
-
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
 rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3, legend)
@@ -428,7 +413,6 @@ ggplot(sea, aes(x = plit_bound, y = tp_2, colour = TAXON, group = interaction(La
   theme(legend.position = "bottom")+
   facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))
 
-
   zz<- stat_ellipse(data = sea, aes(x = plit_bound, y = tp_2, colour = TAXON, group = interaction(Water, TAXON), type = "norm", level = 0.4, lwd = 1.5)) 
 str(zz)
 zz$compute_geom_1
@@ -444,7 +428,6 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Lake
 
 #path_out <- "../data/"
 #write.csv(sea,paste(path_out,'big-siberdat.csv',sep = ''))
-
 ```
 
 ```{r PL, TP plotting reference lakes individually - Supplemental}
@@ -522,26 +505,6 @@ plot_grid(tt, legend, ncol=1, rel_heights = c(1, .1))
 #rm(smb_pl_em, yp_pl_em, smb_pl_ref, yp_pl_ref, smb_tp, yp_tp, smb_tp_ref, yp_tp_ref)
 ```
 
-```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
-taxonlab<-c("Smallmouth bass", "Yellow perch")
-
-LengthFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length_mean, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = length_mean + length_sd, ymin = length_mean - length_sd)) +
-  xlab("Fish species") +
-  ylab("Mean Total Length +/- sd (mm)") +
-  scale_y_continuous() +
-  scale_x_discrete(labels = taxonlab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
-  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))+
-  theme_bw() +
-  theme(legend.position = "bottom") +
-  theme(axis.text.x = element_text())
-
-LengthFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length), shape = 1)
-
-```
-
 #########################################
 #####     SUPPLEMENTAL FIGURES      #####
 #########################################
@@ -553,7 +516,7 @@ LengthFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x
 
 ##SUBSETTING DATA
 sumCN <- data %>%
-  group_by(Water, TAXON) %>%
+  group_by(Lake, TAXON) %>%
   summarise(mean.CN = mean(C.N), sd.CN = sd(C.N), mean.flen = mean(FLEN), sd.flen = sd(FLEN), mean.rwt = mean(RWT), sd.rwt = sd(RWT), mean.tlen = mean(TLEN), sd.tlen = sd(TLEN))
 
 #PLOT
@@ -565,7 +528,7 @@ ggplot(subset(sumCN, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.CN,
   ylab("Mean C:N Ratio +/- sd") +
   scale_y_continuous() +
   scale_x_discrete() +
-  facet_wrap(~Water)+
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45))
 
@@ -620,40 +583,9 @@ TukeyHSD(yp_fi_aov, which = "Water")
 smb_fi_aov<-aov(FI ~ Water, data = data_FI_SMB)
 summary(smb_fi_aov)
 TukeyHSD(smb_fi_aov, which = "Water")
-
 ```
 
 ```{r S14 - Adj vs Unadj Prop Littoral}
 ##CJFAS Supplemental Fig adj vs unadj PL##
-library(cowplot)
 plot_grid(unadjpl, adjpl, labels = "AUTO")
-```
-
-#######OLD TO REMOVE######
-
-
-```{r SEA plot}
-##OLD##
-##Renaming some of the fish species to match each other
-#need to do for new fish spc
-data$TAXON[data$TAXON == "COSHIN"] <- "COSHINER"
-data$TAXON[data$TAXON == "NP"] <- "NPIKE"
-
-##Adding column for isoscape/biplot colouration
-data$colour <- "All other species"
-data$colour[data$TAXON == "SMB"] <- "SMB"
-data$colour[data$TAXON == "YPERCH"] <- "YPERCH"
-
-#CJFAS Figure 3 - ellipses
-##adding colour for SMB + YP only and symbols for taxon
-CJFAS_CN<-ggplot(data, aes(x = d13C, y = d15N, shape = TAXON, colour = colour, group = interaction(Water, TAXON))) +
-  geom_point() +
-  stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
-  theme_classic(base_size = 14) +
-  facet_wrap(~Water)
-
-#need to change colour values
-CJFAS_CN + 
-  scale_color_manual(values=c("#999999", "#009E73", "#D55E00")) +
-  scale_shape_manual(values = c(1, 2, 3, 4, 17, 6, 7, 8, 9, 10, 11, 12, 25, 14, 15, 16, 17, 5, 0, 20))
 ```
