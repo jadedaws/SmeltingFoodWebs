@@ -87,10 +87,8 @@ rm(d13C, d15N, base_data)
 data <- data %>%
   filter(!grepl("EPH|ZOOP|PERI|MAYFLY|HEPTAGEN|EPHEMERI|CRAYFISH|CLAM|SNAIL|AMPHIPOD", TAXON))
 
-##Combining TLEN and FLEN for common length field
-#mean diff TLEN - FLEN
+##standardizing length
 LEN <- subset(data, select=c(Water,TAXON,FLEN,TLEN)) %>%
-  #filter(grepl("SMB|YPERCH", TAXON)) %>%
   na.omit()
 LEN <- LEN %>%
   group_by(TAXON) %>%
@@ -108,6 +106,7 @@ LEN_sum<- data %>%
 data <- merge(data, LEN_sum, by = c("Water", "TAXON"))
 data  <- subset(data, select=-c(TLEN, FLEN, x_TLEN, x_FLEN, x_diff))
 
+#mean C, N w/ sd
 SI<- data%>%
   group_by(Water, TAXON) %>%
   summarise(d13C_mean = mean(d13C), d13C_sd = sd(d13C), d13C_max = max(d13C), d13C_min = min(d13C), d15N_mean = mean(d15N), d15N_sd = sd(d15N), d15N_max = max(d15N), d15N_min = min(d15N))
@@ -121,6 +120,21 @@ data <- data %>%
   ))
 data <- data %>%
     mutate(Water2 = recode(Water2, 'Baby Lk.'='Barren Lake', 'Daisy Lk.'='Semi-barren Lake', 'Nelson Lk.'='Forested Lake'))
+
+#adding nice label group
+data$Water2[data$Water2 == "Baby Lk."]<-"Barren Lake"
+data$Water2[data$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
+data$Water2[data$Water2 == "Nelson Lk."]<-"Forested Lake"
+data$Lake <- NA
+data$Lake = data$Water
+data$Lake[data$Lake == "Baby Lk."]<-"Barren Lake"
+data$Lake[data$Lake == "Daisy Lk."]<-"Semi-barren Lake"
+data$Lake[data$Lake == "Nelson Lk."]<-"Forested Lake"
+data$Lake[data$Lake == "Mendelssohn"]<-"Reference 1"
+data$Lake[data$Lake == "Turtleshell"]<-"Reference 2"
+data$Lake[data$Lake == "Manitou"]<-"Reference 3"
+data$Lake[data$Lake == "Wawiashkashi"]<-"Reference 4"
+data$Lake[data$Lake == "Stormy"]<-"Reference 5"
 
 rm(LEN, LEN_sum)
 ```
@@ -399,21 +413,8 @@ rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3, legend)
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 sea<-data %>%
-  subset(select = c("Water","Water2", "TAXON", "p_lit", "adjp_lit","plit_bound", "tp_2")) %>%
+  subset(select = c("Water","Water2","Lake", "TAXON", "p_lit", "adjp_lit","plit_bound", "tp_2")) %>%
   filter(TAXON %in% c("SMB", "YPERCH"))
-sea$Water2[sea$Water2 == "Baby Lk."]<-"Barren Lake"
-sea$Water2[sea$Water2 == "Daisy Lk."]<-"Semi-barren Lake"
-sea$Water2[sea$Water2 == "Nelson Lk."]<-"Forested Lake"
-sea$Lake <- NA
-sea$Lake = sea$Water
-sea$Lake[sea$Lake == "Baby Lk."]<-"Barren Lake"
-sea$Lake[sea$Lake == "Daisy Lk."]<-"Semi-barren Lake"
-sea$Lake[sea$Lake == "Nelson Lk."]<-"Forested Lake"
-sea$Lake[sea$Lake == "Mendelssohn"]<-"Reference 1"
-sea$Lake[sea$Lake == "Turtleshell"]<-"Reference 2"
-sea$Lake[sea$Lake == "Manitou"]<-"Reference 3"
-sea$Lake[sea$Lake == "Wawiashkashi"]<-"Reference 4"
-sea$Lake[sea$Lake == "Stormy"]<-"Reference 5"
 
 #hist(sea$p_lit)
 
@@ -433,13 +434,13 @@ str(zz)
 zz$compute_geom_1
 
 #40% adjusted plit
-ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Water2, TAXON))) +
-  geom_point() +
+ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Lake, TAXON))) +
   stat_ellipse(type = "norm", level = 0.4, lwd = 1.5) +
   theme_classic(base_size = 14) +
   labs(title = "Adj PL 40% ellipse") +
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"))+
-  facet_wrap(~Water2)
+    theme(legend.position = "bottom")+
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))
 
 #path_out <- "../data/"
 #write.csv(sea,paste(path_out,'big-siberdat.csv',sep = ''))
@@ -463,7 +464,7 @@ pl_ref$Lake[pl_ref$Water == "Turtleshell"]<-"Reference 2"
 pl_ref$Lake[pl_ref$Water == "Manitou"]<-"Reference 3"
 pl_ref$Lake[pl_ref$Water == "Wawiashkashi"]<-"Reference 4"
 pl_ref$Lake[pl_ref$Water == "Stormy"]<-"Reference 5"
-pl_ref$letter <- c("A", "A", "C", "BC", "AC", "A", "A", "A", "A", "A")
+pl_ref$letter <- c("A", "A", "B", "B", "A", "B", "A", "C", "BC", "AB")
 
 refPL<-ggplot(pl_ref, aes(x=Lake, y=emmean, colour=TAXON))+
   geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
@@ -518,10 +519,11 @@ tt<-plot_grid(refPL + theme(legend.position="none"),
 
 plot_grid(tt, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_em, yp_pl_em, smb_pl_ref, yp_pl_ref, smb_tp, yp_tp, smb_tp_ref, yp_tp_ref)
+#rm(smb_pl_em, yp_pl_em, smb_pl_ref, yp_pl_ref, smb_tp, yp_tp, smb_tp_ref, yp_tp_ref)
 ```
 
 ```{r TLEN plot Fig X and mean TLEN +/- sd calculation Table 1}
+taxonlab<-c("Smallmouth bass", "Yellow perch")
 
 LengthFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length_mean, colour = TAXON, group = TAXON)) +
   geom_point() +
@@ -529,10 +531,11 @@ LengthFig<-ggplot(subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y 
   xlab("Fish species") +
   ylab("Mean Total Length +/- sd (mm)") +
   scale_y_continuous() +
-  scale_x_discrete(labels = smbyplab, guide = guide_axis(n.dodge=2)) +
-  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("black", "grey")) +
-  facet_wrap(~Water)+
+  scale_x_discrete(labels = taxonlab, guide = guide_axis(n.dodge=2)) +
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))+
   theme_bw() +
+  theme(legend.position = "bottom") +
   theme(axis.text.x = element_text())
 
 LengthFig + geom_point(data = subset(data, TAXON %in% c("YPERCH", "SMB")), aes(x = TAXON, y = length), shape = 1)
