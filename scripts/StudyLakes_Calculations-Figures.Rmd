@@ -392,9 +392,8 @@ pl2<-plot_grid(PL + theme(legend.position="none"),
           labels = "AUTO")
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3, legend)
+rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3)
 ```
-##Range info for TP and PL needed for CJFAS body text
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
 sea<-data %>%
@@ -514,17 +513,23 @@ cond_dat <- data %>%
   group_by(Lake, TAXON) %>%
   filter(TAXON %in% c("SMB", "YPERCH")) %>%
   summarise(mean.CN = mean(C.N), sd.CN = sd(C.N), mean.length = mean(length), sd.length = sd(length), mean.rwt = mean(RWT), sd.rwt = sd(RWT))
+
+ref_cond_dat <- cond_dat %>%
+  filter(Lake %in% c("Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")) %>%
+  group_by(TAXON) %>%
+  summarise(mean.CN = mean(mean.CN), sd.CN = mean(sd.CN))
+ref_cond_dat$Lake <- "Reference Lakes"
+cond_dat <- rbind(cond_dat, ref_cond_dat)
+
 #plot
-ggplot(cond_dat, aes(x = TAXON, y = mean.CN, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.CN + sd.CN, ymin = mean.CN - sd.CN)) +
-  xlab("Smallmouth bass and Yellow perch communities by Lake") +
-  ylab("Mean C:N Ratio +/- sd") +
-  scale_y_continuous() +
-  scale_x_discrete() +
+CNplot<-ggplot(subset(cond_dat, Lake %in% c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")), aes(x=Lake, y=mean.CN, colour=TAXON))+
+  geom_errorbar(aes(ymin=(mean.CN-sd.CN), ymax=(mean.CN+sd.CN)), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(position = position_dodge(0.5), size = 3)+
+  ylab("Mean C:N Ratio +/- sd")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
-  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))+
-  theme_bw()
+  theme_bw()+
+  theme(axis.title.x = element_blank()) +
+  scale_x_discrete(labels = lakelab)
 
 #C:N ANOVA
 CN_YP<-data %>%
@@ -534,13 +539,13 @@ CN_SMB<-data %>%
   subset(select = c("Water2","Lake", "TAXON", "C.N")) %>%
   filter(TAXON %in% c("SMB"))
 
-yp_cn_aov<-aov(C.N ~ Lake, data = CN_YP)
+yp_cn_aov<-aov(C.N ~ Water2, data = CN_YP)
 summary(yp_cn_aov)
-smb_cn_aov<-aov(C.N ~Lake, data = CN_SMB)
+smb_cn_aov<-aov(C.N ~ Water2, data = CN_SMB)
 summary(smb_cn_aov)
-TukeyHSD(smb_cn_aov, which = "Lake")
+TukeyHSD(smb_cn_aov, which = "Water2")
 
-##FI MEAN
+##FI
 #add FI to 'data'
 data$FI <- NA
 data$FI <- (data$RWT/(data$length^3)) * 100000
@@ -550,21 +555,24 @@ FIdat <- data %>%
   group_by(Lake, TAXON) %>%
   summarise(mean.FI = mean(FI), sd.FI = sd(FI))
 
+ref_FIdat <- FIdat %>%
+  filter(Lake %in% c("Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")) %>%
+  group_by(TAXON) %>%
+  summarise(mean.FI = mean(mean.FI, na.rm=T), sd.FI = mean(sd.FI, na.rm=T))
+ref_FIdat$Lake <- "Reference Lakes"
+FIdat <- rbind(FIdat, ref_FIdat)
+
 #plot
-ggplot(FIdat, aes(x = TAXON, y = mean.FI, colour = TAXON, group = TAXON)) +
-  geom_point() +
-  geom_errorbar(aes(ymax = mean.FI + sd.FI, ymin = mean.FI - sd.FI)) +
-  xlab("Smallmouth bass and Yellow perch communities by Lake") +
-  ylab("Mean Fulton's Index +/- sd") +
-  scale_y_continuous() +
-  scale_x_discrete() +
+FIplot<-ggplot(subset(FIdat, Lake %in% c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")), aes(x=Lake, y=mean.FI, colour=TAXON))+
+  geom_errorbar(aes(ymin=(mean.FI-sd.FI), ymax=(mean.FI+sd.FI)), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(position = position_dodge(0.5), size = 3)+
+  ylab("Mean Fulton's Index +/- sd")+
   scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
-  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5"))+
-  theme_bw()
+  theme_bw()+
+  theme(axis.title.x = element_blank()) +
+  scale_x_discrete(labels = lakelab)
 
-#FI ANOVA
-#subsetting for FI by spp.
-
+#anova
 FI_YP<-data %>%
   subset(select = c("Water2","Lake", "TAXON", "FI")) %>%
   filter(TAXON %in% c("YPERCH"))
@@ -572,16 +580,51 @@ FI_SMB<-data %>%
   subset(select = c("Water2","Lake", "TAXON", "FI")) %>%
   filter(TAXON %in% c("SMB"))
 
-yp_fi_aov<-aov(FI ~ Lake, data = FI_YP)
+yp_fi_aov<-aov(FI ~ Water2, data = FI_YP)
 summary(yp_fi_aov)
-TukeyHSD(yp_fi_aov, which = "Lake")
-
-smb_fi_aov<-aov(FI ~ Lake, data = FI_SMB)
+TukeyHSD(yp_fi_aov, which = "Water2")
+smb_fi_aov<-aov(FI ~ Water2, data = FI_SMB)
 summary(smb_fi_aov)
-TukeyHSD(smb_fi_aov, which = "Lake")
+TukeyHSD(smb_fi_aov, which = "Water2")
+
+#FIdat$letter <- c("B", "A", "B", "BC", "C", "A", "A", "A", "A", "A")
+
+cond_2p<-plot_grid(CNplot + theme(legend.position="none"), 
+          FIplot + theme(legend.position="none"), 
+          labels = "AUTO")
+plot_grid(cond_2p, legend, ncol=1, rel_heights = c(1, .1))
+
+rm(ref_cond_dat, ref_FIdat)
 ```
 
 ```{r S14 - Adj vs Unadj Prop Littoral}
-##CJFAS Supplemental Fig adj vs unadj PL##
-plot_grid(unadjpl, adjpl, labels = "AUTO")
+plit_dat<-data %>%
+  subset(select = c(Water2, Lake, TAXON, p_lit, adjp_lit)) %>%
+  filter(TAXON %in% c("SMB", "YPERCH")) %>%
+  group_by(Water2, TAXON) %>%
+  summarise(mean.plit = mean(p_lit), sd.plit = sd(p_lit), mean.adjpl = mean(adjp_lit), sd.adjpl = sd(adjp_lit))
+
+#plot
+unadjpl<-ggplot(plit_dat, aes(x=Water2, y=mean.plit, colour=TAXON))+
+  geom_errorbar(aes(ymin=mean.plit-sd.plit, ymax=mean.plit+sd.plit), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(size = 3, position = position_dodge(0.5))+
+  ylab("Mean Proportion Littoral (raw) +/- sd") + 
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"), guide="none") +
+  theme_bw()+
+  theme(axis.title.x = element_blank())+
+  scale_x_discrete(labels = lakelab)
+
+adjpl<-ggplot(plit_dat, aes(x=Water2, y=mean.adjpl, colour=TAXON))+
+  geom_errorbar(aes(ymin=mean.adjpl-sd.adjpl, ymax=mean.adjpl+sd.adjpl), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
+  geom_point(size = 3, position = position_dodge(0.5))+
+  ylab("Mean Proportion Littoral (adjusted) +/- sd") + 
+  scale_colour_manual(labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC"), guide="none") +
+  theme_bw()+
+  theme(axis.title.x = element_blank())+
+  scale_x_discrete(labels = lakelab)
+
+pl_2p<-plot_grid(unadjpl + theme(legend.position="none"), 
+          adjpl + theme(legend.position="none"), 
+          labels = "AUTO")
+plot_grid(pl_2p, legend, ncol=1, rel_heights = c(1, .1))
 ```
