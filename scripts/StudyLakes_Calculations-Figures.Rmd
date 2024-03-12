@@ -430,6 +430,8 @@ ggplot(sea, aes(x = adjp_lit, y = tp_2, colour = TAXON, group = interaction(Lake
 #write.csv(sea,paste(path_out,'big-siberdat.csv',sep = ''))
 ```
 
+SUPPLEMENTAL FIGURES
+
 ```{r PL, TP plotting reference lakes individually - Supplemental}
 #pl
 smb_pl_ref<-as.data.frame(summary(smb_pl_em)$emmeans)%>%
@@ -505,84 +507,78 @@ plot_grid(tt, legend, ncol=1, rel_heights = c(1, .1))
 #rm(smb_pl_em, yp_pl_em, smb_pl_ref, yp_pl_ref, smb_tp, yp_tp, smb_tp_ref, yp_tp_ref)
 ```
 
-#########################################
-#####     SUPPLEMENTAL FIGURES      #####
-#########################################
-
 ```{r S15 - C:N Ratio (A), Fultons Index (B)}
-#################
-##  C:N MEAN   ##
-#################
-
-##SUBSETTING DATA
-sumCN <- data %>%
+##C:N MEAN
+#df
+cond_dat <- data %>%
   group_by(Lake, TAXON) %>%
-  summarise(mean.CN = mean(C.N), sd.CN = sd(C.N), mean.flen = mean(FLEN), sd.flen = sd(FLEN), mean.rwt = mean(RWT), sd.rwt = sd(RWT), mean.tlen = mean(TLEN), sd.tlen = sd(TLEN))
-
-#PLOT
-ggplot(subset(sumCN, TAXON %in% c("SMB", "YPERCH")), aes(x = TAXON, y = mean.CN, colour = TAXON, group = TAXON)) +
+  filter(TAXON %in% c("SMB", "YPERCH")) %>%
+  summarise(mean.CN = mean(C.N), sd.CN = sd(C.N), mean.length = mean(length), sd.length = sd(length), mean.rwt = mean(RWT), sd.rwt = sd(RWT))
+#plot
+ggplot(cond_dat, aes(x = TAXON, y = mean.CN, colour = TAXON, group = TAXON)) +
   geom_point() +
-  scale_color_grey(start= 0.1, end = 0.5) +
   geom_errorbar(aes(ymax = mean.CN + sd.CN, ymin = mean.CN - sd.CN)) +
   xlab("Smallmouth bass and Yellow perch communities by Lake") +
   ylab("Mean C:N Ratio +/- sd") +
   scale_y_continuous() +
   scale_x_discrete() +
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
   facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")))+
-  theme_bw()+
-  theme(axis.text.x = element_text(angle = 45))
+  theme_bw()
 
 #C:N ANOVA
-data_CN <- data[,c(1:3,6)]
-data_CN_YP <- data_CN[data_CN$TAXON == "YPERCH",]
-data_CN_SMB <- data_CN[data_CN$TAXON == "SMB",]
+CN_YP<-data %>%
+  subset(select = c("Water2","Lake", "TAXON", "C.N")) %>%
+  filter(TAXON %in% c("YPERCH"))
+CN_SMB<-data %>%
+  subset(select = c("Water2","Lake", "TAXON", "C.N")) %>%
+  filter(TAXON %in% c("SMB"))
 
-yp_cn_aov<-aov(C.N ~ Water, data = data_CN_YP)
+yp_cn_aov<-aov(C.N ~ Lake, data = CN_YP)
 summary(yp_cn_aov)
-TukeyHSD(yp_cn_aov, which = "Water")
-
-smb_cn_aov<-aov(C.N ~ Water, data = data_CN_SMB)
+smb_cn_aov<-aov(C.N ~Lake, data = CN_SMB)
 summary(smb_cn_aov)
-TukeyHSD(smb_cn_aov, which = "Water")
+TukeyHSD(smb_cn_aov, which = "Lake")
 
-#################
-##   FI MEAN   ##
-#################
+##FI MEAN
 #add FI to 'data'
 data$FI <- NA
-data$FI <- ifelse(is.na(data$FLEN), (data$RWT/(data$TLEN^3)) * 100000, (data$RWT/(data$FLEN^3)) * 100000)
-
-##SUBSETTING DATA
+data$FI <- (data$RWT/(data$length^3)) * 100000
 FIdat <- data[!is.na(data$FI),]
-sumFI <- FIdat %>%
-  group_by(Water, TAXON) %>%
+FIdat <- data %>%
+  filter(TAXON %in% c("SMB", "YPERCH")) %>%
+  group_by(Lake, TAXON) %>%
   summarise(mean.FI = mean(FI), sd.FI = sd(FI))
 
-ggplot(subset(sumFI, TAXON %in% c("SMB","YPERCH")), aes(x = TAXON, y = mean.FI, colour = TAXON, group = TAXON)) +
+#plot
+ggplot(FIdat, aes(x = TAXON, y = mean.FI, colour = TAXON, group = TAXON)) +
   geom_point() +
-  scale_color_grey(start = 0.1, end = 0.5) +
   geom_errorbar(aes(ymax = mean.FI + sd.FI, ymin = mean.FI - sd.FI)) +
   xlab("Smallmouth bass and Yellow perch communities by Lake") +
   ylab("Mean Fulton's Index +/- sd") +
   scale_y_continuous() +
   scale_x_discrete() +
-  facet_wrap(~Water)+
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45))
+  scale_colour_manual(name = "Species", labels = c("Smallmouth bass", "Yellow perch"), values = c("#D8B365", "#5AB4AC")) +
+  facet_wrap(~factor(Lake, c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5"))+
+  theme_bw()
 
 #FI ANOVA
 #subsetting for FI by spp.
-data_FI <- data[,c(1:3,27)]
-data_FI_YP <- data_FI[data_FI$TAXON == "YPERCH",]
-data_FI_SMB <- data_FI[data_FI$TAXON == "SMB",]
 
-yp_fi_aov<-aov(FI ~ Water, data = data_FI_YP)
+FI_YP<-data %>%
+  subset(select = c("Water2","Lake", "TAXON", "FI")) %>%
+  filter(TAXON %in% c("YPERCH"))
+FI_SMB<-data %>%
+  subset(select = c("Water2","Lake", "TAXON", "FI")) %>%
+  filter(TAXON %in% c("SMB"))
+
+yp_fi_aov<-aov(FI ~ Lake, data = FI_YP)
 summary(yp_fi_aov)
-TukeyHSD(yp_fi_aov, which = "Water")
+TukeyHSD(yp_fi_aov, which = "Lake")
 
-smb_fi_aov<-aov(FI ~ Water, data = data_FI_SMB)
+smb_fi_aov<-aov(FI ~ Lake, data = FI_SMB)
 summary(smb_fi_aov)
-TukeyHSD(smb_fi_aov, which = "Water")
+TukeyHSD(smb_fi_aov, which = "Lake")
 ```
 
 ```{r S14 - Adj vs Unadj Prop Littoral}
