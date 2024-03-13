@@ -137,7 +137,7 @@ data$Lake[data$Lake == "Manitou"]<-"Reference 3"
 data$Lake[data$Lake == "Wawiashkashi"]<-"Reference 4"
 data$Lake[data$Lake == "Stormy"]<-"Reference 5"
 
-rm(LEN, LEN_sum)
+#rm(LEN, LEN_sum)
 ```
 
 ```{r Proportion Littoral calculation}
@@ -209,7 +209,7 @@ num_out <- num_under + num_over
 proportion_in <- ((num_in)/(num_in + num_out))*100
 proportion_in
 
-rm(data_sum, pn, pl_in, pl_over, pl_under, num_in, num_over, num_under, num_out)
+#rm(data_sum, pn, pl_in, pl_over, pl_under, num_in, num_over, num_under, num_out)
 ```
 
 ```{r Trophic Position calculation}
@@ -222,7 +222,17 @@ data_sum_tp <- data %>% group_by(Water, TAXON) %>%
 #add to df
 data <- merge(data, data_sum_tp, by = c("Water", "TAXON"))
 
-rm(data_sum_tp)
+wholelakeTP <- data %>%
+  group_by(Lake) %>%
+  summarise(mean.lakeTP = mean(tp_2), sd.lakeTP = sd(tp_2))
+
+ref_wl_TP <- wholelakeTP %>%
+  filter(Lake %in% c("Reference 1", "Reference 2", "Reference 3", "Reference 4", "Reference 5")) %>%
+  summarise(mean.lakeTP = mean(mean.lakeTP), sd.lakeTP = mean(sd.lakeTP))
+ref_wl_TP$Lake <- "Reference Lakes"
+wholelakeTP <- rbind(wholelakeTP, ref_wl_TP)
+
+#rm(data_sum_tp)
 ```
 
 ```{r ANOVA/ANCOVA proportion littoral and TP w/ length}
@@ -271,6 +281,7 @@ SMB_PL_length<-ggplot(x, aes(x=Water2, y=gemmean))+
 #ANOVA 
 yp_pl_mod<- lm(adjp_lit~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_pl_mod)
+summary(yp_pl_mod)
 #ANCOVA w/ length interaction + contrasts
 yp_pl_em<-emmeans(yp_pl_mod, pairwise ~ Water, adjust = "none")
 yp_pl_em
@@ -295,7 +306,8 @@ YP_PL_length<-ggplot(x1, aes(x=Water2, y=gemmean))+
   theme_bw()
 #stitch together PL plot df
 PL_gm <- full_join(x,x1)
-PL_gm$letter <- c("A", "A", "B", "C", "AC", "BC", "A", "C")
+PL_gm$letter <- c("A", "A", "B", "C", "AB", "B", "A", "B")
+PL_gm$CL <- (PL_gm$gemmean - PL_gm$glower.CL)
 #plot
 lakelab <- c("Barren Lake", "Semi-barren Lake", "Forested Lake", "Reference Lakes")
 PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
@@ -319,6 +331,7 @@ PL<-ggplot(PL_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
 #ANOVA
 smb_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="SMB"))
 anova(smb_tp_mod)
+summary(smb_tp_mod)
 #ANCOVA
 smb_tp<-emmeans(smb_tp_mod, pairwise ~ Water, adjust = "none")
 smb_tp
@@ -344,6 +357,7 @@ SMB_TP_size<-ggplot(x2, aes(x=Water2, y=gemmean))+
 ##YP
 yp_tp_mod<- lm(tp_2~Water+length, data=data, subset=(TAXON=="YPERCH"))
 anova(yp_tp_mod)
+summary(yp_tp_mod)
 #contrasts
 yp_tp<-emmeans(yp_tp_mod, pairwise ~ Water, adjust = "none")
 yp_tp
@@ -368,7 +382,8 @@ YP_TP_size<-ggplot(x3, aes(x=Water2, y=gemmean))+
   theme_bw()
 #stitch df
 TP_gm<-full_join(x2,x3)
-TP_gm$letter <- c("A", "B", "B", "B", "A", "A", "A", "A")
+TP_gm$letter <- c("A", "B", "B", "C", "A", "A", "A", "A")
+TP_gm$CL <- (TP_gm$gemmean - TP_gm$glower.CL)
 #plot
 TP<- ggplot(TP_gm, aes(x=Water2, y=gemmean, colour=TAXON))+
   geom_errorbar(aes(ymin=glower.CL, ymax=gupper.CL), width=0.4, size = 1, position = position_dodge(0.5),show.legend=F)+
@@ -392,7 +407,7 @@ pl2<-plot_grid(PL + theme(legend.position="none"),
           labels = "AUTO")
 plot_grid(pl2, legend, ncol=1, rel_heights = c(1, .1))
 
-rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3)
+#rm(smb_pl_mod, yp_pl_mod, smb_tp_mod, yp_tp_mod, x, x1, x2, x3)
 ```
 
 ```{r SEA Ellipse plot - CJFAS Fig 3 Isoscape plot}
