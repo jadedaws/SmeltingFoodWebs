@@ -19,3 +19,21 @@ In order on manuscript author list:
 - Erik J.S. Emilson -  `@ErikEmilson`
 - Kevin S. McCann
 - Brie A. Edwards
+
+
+## File overview
+
+<b>Data</b>
+`2019-CRADL_BB-DY-NL-WORKING.csv` - File containing the BsM catch and size data for the study lakes (barren, semi-barren, and forested watershed)
+`CRADL_catch_data_2019-WORKING.csv` - File containing the BsM protocol catch information metadata for Sudbury BsM lakes (Study Lakes, NE, and SW BsM) 
+`Dawson-Isotopes-2024Feb06.csv` - File containing the raw C and N isotope values for the reference lakes (Reference Lake 1 through 5)
+`Dawson-Isotopes-StudyLakes.csv` - File containing the raw C and N isotope values for the study lakes (barren, semi-barren, and forested watershed)
+`big-siberdat.csv` - File containing isotopic data for study and reference lakes formatted for use in SIBER R package
+`ellipse-data_Mar04.csv` - File containing isotopic data used for calculating niche ellipse extents
+`seab_results.csv` - File containing the raw Bayesian standard ellipse area results
+
+<b>Scripts</b>
+`Regional-Context_BsM.Rmd` - R Markdown file containing the script used to calculate Sudbury regional lake comparisons (CPUE, fish size)
+`SIBER-Niche.Rmd` - R Markdown file containing the script used to calculate isotopic niche metrics using SIBER package
+`StudyLakes_Calculations-Figures.Rmd` - R Markdown file containing the script used to pre-process data, calculate trophic position, proportion littoral, and condition indices, and create all figures (except for map [Fig. 1]) 
+`calculate_ellipse_extents.R` - R script used to calculate the standard ellipse areas
