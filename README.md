@@ -34,7 +34,7 @@ In order on manuscript author list:
 - `seab_results.csv` - File containing the raw Bayesian standard ellipse area results
 
 <b>Scripts</b>
-`Regional-Context_BsM.Rmd` - R Markdown file containing the script used to calculate Sudbury regional lake comparisons (CPUE, fish size)
-`SIBER-Niche.Rmd` - R Markdown file containing the script used to calculate isotopic niche metrics using SIBER package
-`StudyLakes_Calculations-Figures.Rmd` - R Markdown file containing the script used to pre-process data, calculate trophic position, proportion littoral, and condition indices, and create all figures (except for map [Fig. 1]) 
-`calculate_ellipse_extents.R` - R script used to calculate the standard ellipse areas
+- `Regional-Context_BsM.Rmd` - R Markdown file containing the script used to calculate Sudbury regional lake comparisons (CPUE, fish size)
+- `SIBER-Niche.Rmd` - R Markdown file containing the script used to calculate isotopic niche metrics using SIBER package
+- `StudyLakes_Calculations-Figures.Rmd` - R Markdown file containing the script used to pre-process data, calculate trophic position, proportion littoral, and condition indices, and create all figures (except for map [Fig. 1]) 
+- `calculate_ellipse_extents.R` - R script used to calculate the standard ellipse areas
