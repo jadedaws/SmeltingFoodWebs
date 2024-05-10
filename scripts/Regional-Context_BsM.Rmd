@@ -11,10 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-*Focus on perch and smallmouth bass across lakes*
-**Add relative density of perch + smb from 3 lakes - CPUE, biomass, abundance**
-**Add mean body size, CPUE, weighted CPUE**
-
 ```{r Importing data}
 rm(list=ls())
 
@@ -411,7 +407,7 @@ ggplot(catch_sum, aes(x = Species.code, y = abundance, colour = Species.code, gr
   theme_bw()
 ```
 
-*Relative Density calculations - CPUE? Weighted CPUE?*
+*Relative Density calculations*
 ```{r Relative Density all fish}
 catch_sum2 <- catch_data %>%
   group_by(Water, Species.code) %>%
