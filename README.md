@@ -36,9 +36,9 @@ Unstable and simplified freshwater food webs impair the resilience of Canadian f
 In order on manuscript author list:
 
 - Jade C. Dawson - <a href="https://github.com/jadedaws">`@jadedaws`</a>
-- Matthew M. Guzzo - `@mattguzzo12`
+- Matthew M. Guzzo - <a href="https://github.com/mattguzzo12">`@mattguzzo12`</a>
 - John M. Gunn
-- Erik J.S. Emilson -  `@ErikEmilson`
-- Kevin S. McCann - `@McCannLab`
+- Erik J.S. Emilson -  <a href="https://github.com/ErikEmilson">`@ErikEmilson`</a>
+- Kevin S. McCann - <a href="https://github.com/McCannLab">`@McCannLab`</a>
 - Brie A. Edwards
 
