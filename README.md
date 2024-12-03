@@ -4,7 +4,7 @@
 
 <b> J.C. Dawson, M.M. Guzzo, J.M. Gunn, E.J.S. Emilson, K.S. McCann, and B.A. Edwards </b>
 
-Pre-print available <a href="https://cdnsciencepub.com/doi/pdf/10.1139/cjfas-2023-0305">here</a>.
+Full-text available <a href="https://cdnsciencepub.com/doi/pdf/10.1139/cjfas-2023-0305">here</a>.
 
 
 ## Abstract
